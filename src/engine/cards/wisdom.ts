@@ -474,10 +474,13 @@ defineSkill('Prep', [
         me.exhausted = true;
         ctx.log('KC-18', '橫置 Prep');
         const others = s.player.skills.filter((k) => k.name !== 'Prep');
+        const opt = (k: (typeof others)[number]) => ({ id: k.name, label: `${k.name} (${k.cubeElement}${k.exhausted ? ' ×' : ''})` });
         for (let i = 0; i < 2; i++) {
-          const picks = yield* chooseCards(ctx, 'KC-19', `Prep：選 2 個技能交換方塊 (${i + 1}/2，不選 = 結束)`, others.map((k) => k.name), 0, 2);
-          if (picks.length < 2) break;
-          const [a, b] = picks.map((n) => s.player.skills.find((k) => k.name === n)!);
+          const x = yield* ctx.choose('KC-19', `Prep：交換方塊 (${i + 1}/2)：第 1 個技能`, [...others.map(opt), { id: 'done', label: '結束' }]);
+          if (x === 'done') break;
+          const y = yield* ctx.choose('KC-19', `Prep：和 ${x} 交換的技能`, others.filter((k) => k.name !== x).map(opt));
+          const a = s.player.skills.find((k) => k.name === x)!;
+          const b = s.player.skills.find((k) => k.name === y)!;
           [a.cubeElement, b.cubeElement] = [b.cubeElement, a.cubeElement];
           [a.exhausted, b.exhausted] = [b.exhausted, a.exhausted];
           ctx.log('KC-19', `交換 ${a.name} 與 ${b.name} 的方塊`);

@@ -636,7 +636,7 @@ describe('Wisdom 技能', () => {
       sk.activatedByExhaust = false;
       ctx.s.roundState.activeElement = sk.cubeElement;
       return useSkillGen(ctx);
-    }, [[a.name, b.name], []]);
+    }, [a.name, b.name, 'done']);
     expect(r.s.player.skills.find((k) => k.name === a.name)!.cubeElement).toBe(eb);
     expect(r.s.player.skills.find((k) => k.name === b.name)!.cubeElement).toBe(ea);
     expect(r.s.player.skills.find((k) => k.name === 'Prep')!.exhausted).toBe(true);

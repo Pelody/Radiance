@@ -1,6 +1,6 @@
 # Radiance 規則規格
 
-版本：1.5.3
+版本：1.6.0
 來源：`Rulebook-Base-Radiance-FINAL_pnp.pdf` (128 頁)，以及 PnP 檔中的兩張參考卡 (`9Up-NoBleed-A4.pdf` 第 61、62 頁)
 範圍：規則書全部規則，加上效果引擎設計與數位化原則。規則書每一頁的對應見 `91-history.md`。
 

@@ -109,6 +109,8 @@
 | 軌道與資源 | `CorruptionAdvanced(newValue)`、`ThreatTrackAdvanced(n)`、`ResistanceTrackAdvanced(n)`、`LightGained(n)`、`LightSpent(n)`、`XPGained(n)`、`XPSpent(n)`、`Growth(track)` |
 | 技能 | `SkillUsed(skill)`、`SkillExhausted(skill)`、`SkillReadied(skill)`、`SkillUnlocked(skill)` |
 | Shade / Shadow | `ShadeRevealed`、`ShadeEncounterStarted`、`ShadowIntervened(shadow)` |
+| 即將發生 (1.6.0) | 事件發生**之前**送出，效果可以改寫內容 (EE-03 取代效果、「When taking Wound…」)：`WillWoundPlayer(n, source)`、`WillWoundEnemy(enemy, n, source)`、`WillDefeatEnemy(enemy, cancel)`、`WillPlaceLocationProgress(n)`、`WillRevealTreachery(draw)`、`WillResolveDistance(dest, distance, min, deferred)`、`WillProduceLight(n)`、`WillRefill(n)`、`WillDiscardCard(card, copies, cloneDefense)` |
+| 其他 (1.6.0) | `LightProduced(n)` (P8-02 之後)、`HandRefilled` (P8-05 之後)、`CardDefended(card, enemy, defense)`、`BurnoutResolved(hit[])`；`EnemyAttacks` 帶 `delta` (這次攻擊的增減)；所有事件帶 `by` (造成事件的效果來源) 與 `seq` (第幾次最外層效果結算) |
 | 夥伴 | `CompanionExhausted(use)`、`CompanionWounded(n)`、`CompanionDestroyed`、`CompanionFlipped` |
 | 選用模組 | `QuestAccepted(quest)`、`QuestCompleted(quest)`、`BaronDefeated(baron)`、`EncounterAttached(location)` |
 - **EE-08** 卡片文字的觸發條件，一律對應到上表的事件加上過濾條件 (例：Shout 的監聽 = `EnemyDefeated` 且 `enemy.initiative == Fast`)。若實作新卡時找不到對應事件，就新增事件並更新這張表，不要在流程程式碼裡寫特例。

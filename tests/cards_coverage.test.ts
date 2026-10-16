@@ -9,13 +9,13 @@ describe('卡片效果覆蓋率', () => {
   const skills = new Set(registeredSkillNames());
   it('所有玩家卡 (基礎面與進階面)', () => {
     const missing = CARDS.filter((c) => c.type === 'player_card')
-      .map((c) => ((c as { side: string }).side === 'advanced' ? `${c.name}+` : (c.name as string)))
+      .map((c) => ((c as unknown as { side: string }).side === 'advanced' ? `${c.name}+` : (c.name as string)))
       .filter((n) => !cards.has(n));
     expect(missing).toEqual([]);
   });
   it('所有技能', () => {
     const missing = CARDS.filter((c) => c.type === 'skill_mat')
-      .flatMap((m) => ((m as { skills: { name: string }[] }).skills ?? []).map((k) => k.name))
+      .flatMap((m) => ((m as unknown as { skills: { name: string }[] }).skills ?? []).map((k) => k.name))
       .filter((n) => !skills.has(n));
     expect(missing).toEqual([]);
   });

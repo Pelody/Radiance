@@ -1,5 +1,5 @@
 // UI-05a 中間：任務區 + Treachery、玩家區、玩家板 (行動卡、墊子、加成卡、夥伴、攻擊卡、探索卡、嗜好市場)、手牌。
-import { enemyHP, questDarkness, enemyAttack, enemyTypes, engagementCount, treacheryPV } from '../engine/calc';
+import { enemyHP, questDarkness, enemyAttack, enemyTypes, engagementCount, locationEV, treacheryPV } from '../engine/calc';
 import { cardName, skillMat } from '../engine/data';
 import { skillUsable } from '../engine/effects';
 import type { SkillState } from '../engine/types';
@@ -83,6 +83,10 @@ function EnemyCard({ id, engage, onClick, selected, dim }: { id: string; engage?
           {e && e.wounds > 0 && <Badge icon="Wound" value={`${e.wounds}/${enemyHP(s, id)}`} pos="br" title="Wounds / HP" />}
           {e && e.progress > 0 && <Badge icon="Progress" value={e.progress} pos="bl" title="Progress" />}
           {disarmed && <span className="badge top">Disarm</span>}
+          {e && e.attachments.length > 0 && (
+            <Badge icon="Action" value={e.attachments.length} pos="tl" title={`附著：${e.attachments.map(cardName).join('、')}`} />
+          )}
+          {s.world.envyAttach[id] && <Badge icon="Shade" value="" pos="tr" title={`附著在 ${cardName(s.world.envyAttach[id])} (Envy：不能攻擊)`} />}
         </>
       }
     />
@@ -105,6 +109,19 @@ export function PlayerArea() {
         const attacked = s.roundState.attackedThisPhase.includes(id) && s.phase === 'attack';
         return <EnemyCard key={id} id={id} onClick={click} selected={assign === id || (!!click && d?.type === 'window')} dim={attacked} />;
       })}
+      {s.world.envyLocations.map((l) => (
+        <div key={l.id} className="revealed" title="Envy：玩家區的地點 (可以分配 EP)">
+          <Card id={l.id} badges={<Badge icon="Progress" value={`${l.progress}/${locationEV(s, l.id)}`} pos="bl" title="Progress / EV" />} />
+        </div>
+      ))}
+      {s.world.location.attachments.length > 0 && (
+        <div className="deferred" title="附著在地點上的卡">
+          <span className="muted small">地點附著</span>
+          {s.world.location.attachments.map((x) => (
+            <Card key={x} id={x} w={40} />
+          ))}
+        </div>
+      )}
       {s.world.revealedLocation && (
         <div className="revealed">
           <span className="muted small">翻開的地點</span>

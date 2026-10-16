@@ -222,16 +222,18 @@ function NumberBody() {
   const { s, d, submit } = useUI();
   const min = d!.min ?? 0;
   const max = d!.max ?? 0;
-  const [n, setN] = useState(max);
-  useEffect(() => setN(max), [d, max]);
-  const pv = d!.rule === 'P4-02' ? coverPreview(s, n) : null;
+  const cover = d!.rule === 'P4-02';
+  const init = cover ? max : min;
+  const [n, setN] = useState(init);
+  useEffect(() => setN(init), [d, init]);
+  const pv = cover ? coverPreview(s, n) : null;
   return (
     <>
       <Prompt text={d!.prompt} rule={d!.rule} />
       <div className="tb-preview">
         <div className="stepper">
           <button onClick={() => setN(Math.max(min, n - 1))}>−</button>
-          <Stat icon="Darkness" value={n} title="抵消的黑暗" big />
+          {cover ? <Stat icon="Darkness" value={n} title="抵消的黑暗" big /> : <Stat value={n} of={max} title={`${min}–${max}`} big />}
           <button onClick={() => setN(Math.min(max, n + 1))}>+</button>
         </div>
         {pv && (
@@ -263,17 +265,29 @@ function CardsBody() {
   const { d, submit } = useUI();
   const [picked, setPicked] = useState<string[]>([]);
   useEffect(() => setPicked([]), [d]);
+  const min = d!.min ?? 0;
+  const max = d!.max ?? d!.cards!.length;
+  const ok = picked.length >= min && picked.length <= max;
+  const toggle = (id: string) => {
+    if (picked.includes(id)) setPicked(picked.filter((x) => x !== id));
+    else if (max === 1) setPicked([id]);
+    else if (picked.length < max) setPicked([...picked, id]);
+  };
   return (
     <>
       <Prompt text={d!.prompt} rule={d!.rule} />
       <div className="tb-preview">
         {d!.cards!.map((id) => (
-          <Card key={id} id={id} w={40} selected={picked.includes(id)} onClick={() => setPicked(picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id])} />
+          <Card key={id} id={id} w={56} selected={picked.includes(id)} title={cardName(id)} onClick={() => toggle(id)} />
         ))}
-        {d!.rule === 'P4-01' && <Stat icon="ExploreBoost" value={`+${picked.length * 2}`} title="探索加成" delta={picked.length} big />}
+        {d!.rule === 'P4-01' ? (
+          <Stat icon="ExploreBoost" value={`+${picked.length * 2}`} title="探索加成" delta={picked.length} big />
+        ) : (
+          <Stat value={picked.length} of={min === max ? max : `${min}–${max}`} title="已選張數" big />
+        )}
       </div>
       <div className="tb-buttons">
-        <button className="primary" onClick={() => submit(picked)}>
+        <button className="primary" disabled={!ok} onClick={() => submit(picked)}>
           確認
         </button>
       </div>

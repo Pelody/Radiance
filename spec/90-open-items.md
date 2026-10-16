@@ -24,6 +24,27 @@
 | ~~OPEN-16~~ | 同一事件觸發多個效果的順序 (EE-12)，以及遊戲動作中發生的事件延後處理 (EE-11) | **Paul 同意用預設**：玩家決定順序；遊戲動作完成後才處理 |
 | OPEN-17 | 夥伴攻擊是否算「你的攻擊」？(CO-02) | 不算，除非文字提到夥伴 |
 | ~~OPEN-18~~ | 兩次移動之間腐化上升時，距離方塊要不要跟著移？開局腐化不是 1 時方塊放哪？ | **已解決 (Paul 確認)**：只在移動結束時重設，腐化上升不跟著移；開局放最左邊的框 (T2b、SU-09) |
+| OPEN-19 | 敵人攻擊另一個敵人 (Trap of Madness、Find Balance+、Reprioritize) 怎麼算傷害？ | 攻擊者的攻擊值 − 目標對攻擊者類型的防禦值；攻擊者是雙重類型時取目標較低的防禦。算直接傷害，不算「你的攻擊」 |
+| OPEN-20 | 「移除 Obstacle」算不算「摧毀 (destroy)」？(Cold Roar) | 算 |
+| OPEN-21 | Step Lightly「避免的接戰數」何時計算？ | 使用當下以目前的光計算 |
+| OPEN-22 | Wrath 的攻擊 X 是什麼？ | 本回合 Wrath 翻開的 Treachery 的 PV；還沒翻開時依 KC-05a X = 1 |
+| OPEN-23 | Enduring Hope「echo 的元素也算啟動」是否也啟動永久加成卡？ | 只影響技能；Enduring Hope 本身要先因加成卡元素或橫置而啟動 (只算一層) |
+| OPEN-24 | Hidden Depth 可以用在哪些棄牌？ | 效果棄牌與防禦棄牌 (含牌庫頂端)；Refresh 棄行動組不行。clone 防禦 1 (腐化 > 5 時 2) |
+| OPEN-25 | Spark「下一次 Character Growth」的折扣保留多久？ | 到回合結束 |
+| OPEN-26 | At All Costs 用的時候本回合已經成長過？ | 折扣無效 (只折「本回合第一次成長」) |
+| OPEN-27 | Garadeth Shieldbearer「if you have cards remaining in your hand」 | 手牌還有任何一張卡就不能用牌庫防禦 |
+| OPEN-28 | Glacian Seafare / Terrimorian Lurker 的「放 Progress」怎麼計次？ | 每一次放置事件分別判斷；Glacian 自己加的 +2 不再觸發 |
+| OPEN-29 | Necro-Mage「instead of defeating」 | 視為取代效果：在擊敗前結算；改為重新翻開時傷害歸零、不給 XP |
+| OPEN-30 | Unfailing Stamina「If you will advance Corruption this round」 | 牌庫張數少於 Refresh 補牌需要的張數 (會重洗) |
+| OPEN-31 | Resist「For every 2 unspent XP, give 1 card +1 Defense」 | 每 2 XP 給手牌某張卡 +1 防禦，可分給不同的卡，最多 +5 |
+| OPEN-32 | Pride「including remainder of round Pride is defeated」 | Pride 在玩家區被擊敗時，接戰敵人 +2 攻擊持續到回合結束 |
+| OPEN-33 | Envy 背面：玩家區地點的 EP 分配與探索 | Explore Phase 先決定分給玩家區地點的 EP，剩下的放目前地點；玩家區地點的 EV 不加抗性軌道；Eldirith Mountains 在玩家區時「抵達後下一回合」條件視為已成立 |
+| OPEN-34 | Equilibrium 的「leftmost column」「second column」 | Luminary 墊的第 0 欄 / 第 1 欄 |
+| OPEN-35 | Singular Focus 的光費 −2 何時判斷技能啟動？ | 以這次要打出的加成卡元素判斷 |
+| OPEN-36 | Find a Way「After an effect allows you to push enemies」一次效果 push 多個敵人 | 每次效果結算只觸發一次 |
+| OPEN-37 | Striking Gold+「discarding your action set counts」：這張卡本身也在被棄的行動組裡 | 打出時登記到回合結束，所以 Refresh 棄行動組時也會觸發 |
+| OPEN-38 | Firestorm 在最終地點移除 Progress | 最終地點恢復為未探索 (FL-03) |
+| OPEN-39 | Cold Roar+「The pulled enemies grant their traits」持續多久？ | 到回合結束 (KC-16) |
 
 ## 玩家決策點 (引擎需要暫停等待輸入的地方)
 

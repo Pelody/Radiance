@@ -10,3 +10,4 @@ p35r1c0,Covetous Flail,attack_defense_type,Photonic,人工判讀的值 (MANUAL_O
 p35r1c1,Vanity Wisps,attack_defense_type,Physical,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)
 p35r1c2,Ravager,attack_defense_type,Both,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)
 p55r0c0,Hunter,special_rules,*An enemy is tracked while it has at least as much {Progress} as its {Darkness}.,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)
+p11r0c2 / p12r0c0,Off the Beaten Path,name,Off the Beaten Path,PDF 解析把 ff 連字讀成 Ǥ (原為「OǤ the Beaten Path」)，依卡圖改回,Claude 依卡圖更正 (2026-10-16)
