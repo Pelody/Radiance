@@ -26,10 +26,13 @@ export function autoUseOption(d: Decision): Option | undefined {
   return legalOf(d).find((o) => AUTO_USE_KEYS.includes(String(o.data?.key ?? '')));
 }
 
-/** 會讓畫面停下來的效果選項 (卡片、技能第一次使用、地點、敵人) */
+/** 會讓畫面停下來的選項 (卡片、技能第一次使用、地點、敵人；付得起的成長) */
 export function stoppingEffects(d: Decision): Option[] {
   return legalOf(d).filter(
-    (o) => (o.id.startsWith('effect:') || o.id.startsWith('skill:')) && !AUTO_USE_KEYS.includes(String(o.data?.key ?? '')),
+    (o) =>
+      ((o.id.startsWith('effect:') || o.id.startsWith('skill:')) && !AUTO_USE_KEYS.includes(String(o.data?.key ?? ''))) ||
+      o.id === 'growAbility' ||
+      o.id === 'growCharacter',
   );
 }
 
