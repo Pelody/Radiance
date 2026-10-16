@@ -1,38 +1,125 @@
-// 階段 1 骨架：只有標題列與卡圖檢視器 (檢查切圖結果)。主畫面在階段 3 依 spec/20-ui.md 實作。
-import { useMemo, useState } from 'react';
-import { CARDS, cardImagePath, type CardType } from '../engine/data';
-import { Icon } from './Icon';
+// 主畫面 (UI-05a)：1600×1000 設計，依視窗大小等比例縮放 (UI-08a)。
+import { useEffect, useMemo, useState } from 'react';
+import { cardImagePath, getCard } from '../engine/data';
+import { Counts, StatusPanel, Tracks } from './Right';
+import { Hand, PlayerArea, PlayerBoard, QuestArea } from './Center';
+import { Header } from './Header';
+import { LogPanel, MapPanel, WorldPanel } from './World';
+import { EventsOverlay, GameOver, GrowthModal, SettingsModal } from './Modals';
+import { NewGame } from './NewGame';
+import { TurnBar } from './TurnBar';
+import { UIContext, makeOptLookup, type UI } from './ctx';
+import { ZoomContext, type ZoomTarget } from './parts';
+import { actionSetPreview, type ActionSel } from './preview';
+import { useGameStore } from './store';
+
+const W = 1600;
+const H = 1000;
+
+function useScale(): number {
+  const calc = () => Math.min(window.innerWidth / W, window.innerHeight / H);
+  const [k, setK] = useState(calc);
+  useEffect(() => {
+    const f = () => setK(calc());
+    window.addEventListener('resize', f);
+    return () => window.removeEventListener('resize', f);
+  }, []);
+  return k;
+}
 
 export function App() {
-  const types = useMemo(() => [...new Set(CARDS.map((c) => c.type))], []);
-  const [type, setType] = useState<CardType>('player_card');
-  const shown = CARDS.filter((c) => c.type === type);
+  const store = useGameStore();
+  const scale = useScale();
+  const [zoom, setZoom] = useState<ZoomTarget | null>(null);
+  const [sel, setSel] = useState<ActionSel>({});
+  const [assign, setAssign] = useState<string | null>(null);
+  const [modal, setModal] = useState<'growth' | 'settings' | null>(null);
+  const v = store.view;
 
+  // 待決策改變時清掉暫存的選擇
+  const sig = v?.pending ? `${v.state.round}|${v.state.phase}|${v.pending.type}|${v.pending.prompt}|${store.game?.session.answers.length}` : '';
+  useEffect(() => {
+    if (v?.pending?.type !== 'actionSet') setSel({});
+    setAssign(null);
+  }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ui: UI | null = useMemo(() => {
+    if (!v) return null;
+    const d = v.pending;
+    const preview = d?.type === 'actionSet' ? actionSetPreview(v.state, sel) : null;
+    return { s: v.state, d, submit: store.submit, sel, setSel, preview, assign, setAssign, ...makeOptLookup(d) };
+  }, [v, sel, assign, store.submit]);
+
+  const stage = (content: React.ReactNode) => (
+    <div className="viewport">
+      <div className="stage" style={{ width: W, height: H, transform: `scale(${scale})` }}>
+        {content}
+      </div>
+    </div>
+  );
+
+  if (!ui) return stage(<NewGame onStart={store.start} />);
+
+  return stage(
+    <UIContext.Provider value={ui}>
+      <ZoomContext.Provider value={setZoom}>
+        <div className="screen">
+          <Header onUndo={store.undo} canUndo={store.canUndo} onGrowth={() => setModal('growth')} onSettings={() => setModal('settings')} />
+          <div className="body">
+            <aside className="left" aria-label="世界">
+              <WorldPanel />
+              <MapPanel />
+              <LogPanel />
+            </aside>
+            <main className="center">
+              <QuestArea />
+              <PlayerArea />
+              <TurnBar error={store.error} />
+              <PlayerBoard />
+              <Hand />
+            </main>
+            <aside className="right" aria-label="狀態與軌道">
+              <StatusPanel />
+              <Tracks />
+              <Counts />
+            </aside>
+          </div>
+          {zoom && <Zoom z={zoom} scale={scale} />}
+          {modal === 'growth' && <GrowthModal onClose={() => setModal(null)} />}
+          {modal === 'settings' && (
+            <SettingsModal
+              onClose={() => setModal(null)}
+              settings={store.settings}
+              setSettings={store.setSettings}
+              onQuit={() => {
+                setModal(null);
+                store.quit();
+              }}
+            />
+          )}
+          {store.events.length > 0 && !ui.s.outcome && <EventsOverlay events={store.events} onClose={store.dismissEvents} />}
+          {ui.s.outcome && <GameOver onNew={store.quit} />}
+        </div>
+      </ZoomContext.Provider>
+    </UIContext.Provider>,
+  );
+}
+
+/** UI-04 滑鼠移到卡上時放大 */
+function Zoom({ z, scale }: { z: ZoomTarget; scale: number }) {
+  const c = getCard(z.id);
+  const stageEl = document.querySelector('.stage') as HTMLElement | null;
+  const base = stageEl?.getBoundingClientRect() ?? { left: 0, top: 0 };
+  const big = c.type === 'skill_mat' ? { w: 505, h: 318 } : c.rotated ? { w: 360, h: 257 } : { w: 257, h: 360 };
+  const x = (z.rect.left - base.left) / scale;
+  const y = (z.rect.top - base.top) / scale;
+  const wCard = z.rect.width / scale;
+  let left = x + wCard + 12;
+  if (left + big.w > W) left = x - big.w - 12;
+  const top = Math.max(8, Math.min(H - big.h - 8, y - 40));
   return (
-    <div>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '8px 12px', borderBottom: '1px solid var(--line)', background: 'var(--panel)' }}>
-        <span style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 22, fontWeight: 700, color: 'var(--gold)' }}>Radiance</span>
-        <span style={{ color: 'var(--muted)' }}>卡圖檢視</span>
-        <span style={{ color: 'var(--gold)' }}>
-          <Icon name="Light" /> <Icon name="Progress" /> <Icon name="XP" />
-        </span>
-        <select value={type} onChange={(e) => setType(e.target.value as CardType)}>
-          {types.map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
-        <span style={{ color: 'var(--muted)' }}>{shown.length}</span>
-      </header>
-      <main style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 12 }}>
-        {shown.map((c) => (
-          <figure key={c.id} style={{ margin: 0, width: 180 }}>
-            <img src={cardImagePath(c.id)} alt={c.name ?? c.id} style={{ maxWidth: 180, maxHeight: 252 }} />
-            <figcaption style={{ fontSize: 12, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {c.id} {c.name}
-            </figcaption>
-          </figure>
-        ))}
-      </main>
+    <div className="zoom" style={{ left, top, width: big.w, height: big.h }}>
+      <img src={cardImagePath(z.id)} alt={c.name ?? z.id} />
     </div>
   );
 }

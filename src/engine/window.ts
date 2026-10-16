@@ -30,6 +30,10 @@ interface ActiveOpt {
   rule: string;
   legal: boolean;
   reason?: string;
+  /** 只能在特定階段使用 (KC-12a「Phase 名稱:」)；介面用來決定要不要停下來 */
+  phaseOnly?: boolean;
+  /** 給介面的資料：skill = 技能名稱、key = 效果定義 key */
+  data?: Record<string, unknown>;
   run: (ctx: Ctx) => Gen;
 }
 
@@ -77,6 +81,7 @@ function skillOptions(ctx: Ctx, phase: Phase): ActiveOpt[] {
         label: `橫置 ${sk.name} 以啟動`,
         rule: 'KC-18',
         legal: true,
+        data: { skill: sk.name },
         run: function* (c: Ctx) {
           sk.exhausted = true;
           sk.activatedByExhaust = true;
@@ -96,6 +101,8 @@ function mkSkillOpt(sk: SkillState, def: EffectDef, src: Source, id: string, lab
     rule: def.rule ?? 'KC-18',
     legal: !why,
     reason: why ?? undefined,
+    phaseOnly: !!def.active!.phases,
+    data: { skill: sk.name, key: def.key },
     run: function* (c: Ctx) {
       if (exhaust) {
         sk.exhausted = true;
@@ -123,6 +130,8 @@ export function activeOptions(ctx: Ctx, phase: Phase): ActiveOpt[] {
         rule: def.rule ?? 'EE-05',
         legal: !why,
         reason: why ?? undefined,
+        phaseOnly: !!def.active.phases,
+        data: { key: def.key, source: src.id, cardId: src.cardId },
         run: function* (c: Ctx) {
           c.log(def.rule ?? 'EE-05', `${src.name}：${def.label}`);
           yield* runEffect(c, src, def, () => def.active!.run(c, src));
@@ -185,7 +194,7 @@ export function* generalWindow(
     const passWhy = canPass(ctx.s);
     const options: Option[] = [
       ...ex,
-      ...acts.map((a) => ({ id: a.id, label: a.label, rule: a.rule, legal: a.legal, reason: a.reason })),
+      ...acts.map((a) => ({ id: a.id, label: a.label, rule: a.rule, legal: a.legal, reason: a.reason, data: { ...a.data, phaseOnly: !!a.phaseOnly } })),
       { id: 'pass', label: '繼續', legal: !passWhy, reason: passWhy ?? undefined },
     ];
     const legal = options.filter((o) => o.legal !== false);
