@@ -105,26 +105,12 @@ export function App() {
   );
 }
 
-/** UI-04 滑鼠移到卡上時放大 */
-function Zoom({ z, scale }: { z: ZoomTarget; scale: number }) {
+/** UI-04 長按放大：一律顯示在畫面正中間 (Paul 要求) */
+function Zoom({ z }: { z: ZoomTarget; scale: number }) {
   const c = getCard(z.id);
-  const stageEl = document.querySelector('.stage') as HTMLElement | null;
-  const base = stageEl?.getBoundingClientRect() ?? { left: 0, top: 0 };
-  // 技能墊放大到看得清技能文字，放在畫面中央
-  const mat = c.type === 'skill_mat';
-  const big = mat ? { w: 1010, h: 636 } : c.rotated ? { w: 360, h: 257 } : { w: 257, h: 360 };
-  const x = (z.rect.left - base.left) / scale;
-  const y = (z.rect.top - base.top) / scale;
-  const wCard = z.rect.width / scale;
-  let left = x + wCard + 12;
-  if (left + big.w > W) left = x - big.w - 12;
-  let top = Math.max(8, Math.min(H - big.h - 8, y - 40));
-  if (mat) {
-    left = (W - big.w) / 2;
-    top = Math.max(8, y - big.h - 12);
-  }
+  const big = c.type === 'skill_mat' ? { w: 1010, h: 636 } : c.rotated ? { w: 448, h: 320 } : { w: 320, h: 448 };
   return (
-    <div className="zoom" style={{ left, top, width: big.w, height: big.h }}>
+    <div className="zoom" style={{ left: (W - big.w) / 2, top: (H - big.h) / 2, width: big.w, height: big.h }}>
       <img src={cardImagePath(z.id)} alt={c.name ?? z.id} />
     </div>
   );
