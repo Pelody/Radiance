@@ -24,7 +24,7 @@ function invariants(s: GameState): void {
   expect(new Set(enemyAll).size).toBe(enemyAll.length);
   expect(enemyAll.length).toBe(ENEMY_TOTAL);
   // 地點守恆
-  const locs = [...w.locationDeck, ...w.locationDiscard, ...p.beacons, w.location.id, ...w.removedLocations, ...w.deferred, ...(w.revealedLocation ? [w.revealedLocation] : [])];
+  const locs = [...w.locationDeck, ...w.locationDiscard, ...p.beacons, w.location.id, ...w.removedLocations, ...w.deferred, ...w.envyLocations.map((l) => l.id), ...(w.revealedLocation ? [w.revealedLocation] : [])];
   expect(new Set(locs).size).toBe(locs.length);
   expect(locs.length).toBe(LOCATION_TOTAL);
   // 數值範圍
@@ -43,7 +43,7 @@ function playOut(seed: number, maxDecisions = 4000): { g: Game; decisions: numbe
     profession: prof,
     hobby: others[seed % 3],
     permSource: others[(seed + 1) % 3],
-    shade: SHADES[seed % 3], // Envy 的特殊規則屬於階段 4
+    shade: SHADES[seed % 4],
     difficulty: (['Ember', 'Blaze', 'Radiant'] as const)[seed % 3],
     seed,
   });

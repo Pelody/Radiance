@@ -3385,7 +3385,7 @@
   "element": "Earth",
   "attack_booster": 0,
   "explore_booster": 5,
-  "name": "OǤ the Beaten Path",
+  "name": "Off the Beaten Path",
   "traits": [
    "Trance"
   ],
@@ -3406,7 +3406,7 @@
     "text": "After you attach this: Place 1 {Progress} on 2 enemies."
    }
   ],
-  "raw_text": "4 {Physical} 4 2 {Defense} 10\n{Earth}\n+0\n+5\nOǤ the Beaten Path\nTrance.\n{1x} Remove up to 3 {Path}. For each {Path} you\nremove, pull 1 enemy and deal it {Wound} equal to\ntwice the number of trance attachments in play.\n{Passive} Enemies with a trance attachment grant\n+2 {XP} when defeated.\n{EagerMandatoryUnrestricted} After you attach this: Place 1 {Progress} on 2 enemies.",
+  "raw_text": "4 {Physical} 4 2 {Defense} 10\n{Earth}\n+0\n+5\nOff the Beaten Path\nTrance.\n{1x} Remove up to 3 {Path}. For each {Path} you\nremove, pull 1 enemy and deal it {Wound} equal to\ntwice the number of trance attachments in play.\n{Passive} Enemies with a trance attachment grant\n+2 {XP} when defeated.\n{EagerMandatoryUnrestricted} After you attach this: Place 1 {Progress} on 2 enemies.",
   "back_id": "p12r0c0",
   "owner_type": "luminary",
   "side": "basic"
@@ -3594,7 +3594,7 @@
   "element": "Earth",
   "attack_booster": 5,
   "explore_booster": 3,
-  "name": "OǤ the Beaten Path",
+  "name": "Off the Beaten Path",
   "traits": [
    "Trance",
    "Trap",
@@ -3617,7 +3617,7 @@
     "text": "After you attach this: Deal this enemy 3 {Wound}."
    }
   ],
-  "raw_text": "4 {Photonic} 5 3 {Defense} 14\n{Earth}\n+5\n+3\nOǤ the Beaten Path\nTrance. Trap. Healer.\n{1x} Attach all trance cards in your hand to\nenemies that do not already have a trance\nattachment. Deal them 3 {Wound}.\n{1x} Discard 1 {Progress} from any number of\nenemies, healing 1 for each. Put the {Progress} on\nthe location.\n{EagerMandatoryUnrestricted} Aft er you att ach this: Deal this enemy 3 {Wound}.",
+  "raw_text": "4 {Photonic} 5 3 {Defense} 14\n{Earth}\n+5\n+3\nOff the Beaten Path\nTrance. Trap. Healer.\n{1x} Attach all trance cards in your hand to\nenemies that do not already have a trance\nattachment. Deal them 3 {Wound}.\n{1x} Discard 1 {Progress} from any number of\nenemies, healing 1 for each. Put the {Progress} on\nthe location.\n{EagerMandatoryUnrestricted} Aft er you att ach this: Deal this enemy 3 {Wound}.",
   "front_id": "p11r0c2",
   "owner_type": "luminary",
   "side": "advanced"

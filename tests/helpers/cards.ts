@@ -1,6 +1,6 @@
 // 卡片效果測試用：取得某階段開始的狀態，直接執行效果積木並自動回答決策。
 import { Ctx, GameOver, type Decision, type Gen } from '../../src/engine/core';
-import { CARDS, cardName, findCards, LUMINARIES, PROFESSIONS } from '../../src/engine/data';
+import { CARDS, cardName, findCards, LUMINARIES, playerCard, PROFESSIONS } from '../../src/engine/data';
 import { activeEffects, defsForSkill, type Source } from '../../src/engine/effects';
 import { newGame } from '../../src/engine/game';
 import { emit, runEffect } from '../../src/engine/ops';
@@ -112,12 +112,12 @@ export function setSlot(s: GameState, slot: 'action' | 'attack' | 'booster' | 'e
   pullOut(s, id);
   s.player.actionSet[slot] = id;
   if (upgraded && !s.player.upgraded.includes(id)) s.player.upgraded.push(id);
-  if (slot === 'booster') s.roundState.activeElement = (CARDS.find((c) => c.id === id) as { element: never }).element;
+  if (slot === 'booster') s.roundState.activeElement = playerCard(id).element;
   return id;
 }
 
 export function toHand(s: GameState, name: string, upgraded = false): string {
-  const id = playerCardId(s, name, s.player.hand);
+  const id = s.player.hand.find((x) => cardName(x) === name) ?? playerCardId(s, name);
   pullOut(s, id);
   s.player.hand.push(id);
   if (upgraded && !s.player.upgraded.includes(id)) s.player.upgraded.push(id);

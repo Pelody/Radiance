@@ -354,13 +354,13 @@ defineCard('Druidane Spellcaster', [
     key: 'Druidane Spellcaster/0',
     label: '{Quest} 移動中每保存 1 個信標 Treachery +1 Progress',
     zone: 'quest',
-    trigger: { event: 'BeaconSaved', timing: 'when', mandatory: true, run: (ctx) => placeTreacheryProgress(ctx, 1, 'EE-09', 'Druidane Spellcaster') },
+    trigger: { event: 'BeaconSaved', timing: 'when', mandatory: true, filter: (_s, _src, ev) => ev.travel !== false, run: (ctx) => placeTreacheryProgress(ctx, 1, 'EE-09', 'Druidane Spellcaster') },
   },
   {
     key: 'Druidane Spellcaster/1',
     label: '{Player} 移動中每保存 1 個信標 Treachery +2 Progress',
     zone: 'player',
-    trigger: { event: 'BeaconSaved', timing: 'when', mandatory: true, run: (ctx) => placeTreacheryProgress(ctx, 2, 'EE-09', 'Druidane Spellcaster') },
+    trigger: { event: 'BeaconSaved', timing: 'when', mandatory: true, filter: (_s, _src, ev) => ev.travel !== false, run: (ctx) => placeTreacheryProgress(ctx, 2, 'EE-09', 'Druidane Spellcaster') },
   },
 ]);
 

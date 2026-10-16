@@ -139,6 +139,8 @@ export interface EffectDef {
   echoElementActive?: boolean;
   /** 技能：這個技能的方塊另外具有某技能方塊的元素 (From the Ashes) */
   cubeAlsoElementOf?: string;
+  /** 技能：不能使用時也列在有效效果中，由效果自己檢查 (Singular Focus 要在打出行動組前修正光費) */
+  alwaysListed?: boolean;
 }
 
 // ---------------------------------------------------------------- 註冊表
@@ -325,7 +327,7 @@ export function activeEffects(s: GameState): SourcedDef[] {
     const src: Source = { id: `skill:${sk.name}`, kind: 'skill', name: sk.name };
     const usable = skillUsable(s, sk);
     for (const def of defsForSkill(sk.name)) {
-      if (usable || isEager(def)) out.push({ src, def });
+      if (usable || isEager(def) || def.alwaysListed) out.push({ src, def });
     }
   }
 

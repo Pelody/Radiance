@@ -73,7 +73,7 @@ export function defaultAnswer(d: Decision, s: GameState): unknown {
     case 'number':
       return d.min; // P4-02 cover 0：EP 全部用於探索
     case 'cards':
-      return [];
+      return d.cards!.slice(0, d.min ?? 0);
     case 'order':
       return d.cards;
     case 'actionSet': {

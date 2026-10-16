@@ -39,8 +39,11 @@ export class Bot {
       case 'number':
         return this.int(d.min!, d.max!);
       case 'cards': {
-        const cs = d.cards!.filter(() => this.rand() < 0.3);
-        return cs.slice(0, d.max ?? cs.length);
+        const all = d.cards!;
+        let cs = all.filter(() => this.rand() < 0.3).slice(0, d.max ?? all.length);
+        const min = d.min ?? 0;
+        if (cs.length < min) cs = [...cs, ...all.filter((x) => !cs.includes(x))].slice(0, min);
+        return cs;
       }
       case 'order': {
         const cs = d.cards!.slice();
