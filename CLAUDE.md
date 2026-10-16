@@ -6,8 +6,8 @@
 
 - 遊戲規則的唯一依據是 `spec/`。**先讀 `spec/README.md`**，它說明了檔案分工、依賴與開發順序。
 - 開發某個功能時，只讀 `spec/README.md`、`spec/01-state-and-data.md`、`spec/03-effect-engine.md`，加上該功能的模組檔與其依賴檔，不需要全部讀完。
-- 不要閱讀 `reference/` 裡的規則書 PDF。只有規格標示 `⚠ INTERP` 或 `OPEN` 且需要查證時，才讀規格註明的那一頁。
-- 規格與規則書看起來有衝突、或規格沒有涵蓋某個情況時，先停下來告訴 Paul，不要自行決定。決定後更新 `spec/` 與 `spec/91-history.md`。
+- 平常不需要閱讀 `reference/` 裡的規則書 PDF。規格標示 `⚠ INTERP` / `OPEN`、規格沒寫清楚或沒涵蓋某個情況時，**先查規則書找答案** (Paul 指示)，找到後照規則書實作，並更新 `spec/` 與 `spec/91-history.md` (註明頁碼)。
+- 規則書也找不到答案，或規格與規則書衝突時，再停下來告訴 Paul，不要自行決定。
 
 ## 資料
 

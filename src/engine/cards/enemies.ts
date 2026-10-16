@@ -136,7 +136,8 @@ defineCard('Thretin Torchwielder', [
 defineCard('Waking Wraith', [
   {
     key: 'Waking Wraith/0',
-    label: '腐化 ≥ 3 時另有 2 PhotonicDefense',
+    label: '腐化 ≥ 3 時另有 2 PhotonicDefense (攻擊也具有 Photonic 類型，P7-01a)',
+    extraTypes: (s, src, id) => (self(src, id) && s.world.corruption >= 3 ? ['Photonic'] : []),
     modify: (s, src, q, v) =>
       q.stat === 'enemyDefense' && self(src, q.enemy) && q.attackType === 'Photonic' && s.world.corruption >= 3 ? v + 2 : v,
   },

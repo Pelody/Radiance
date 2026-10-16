@@ -43,7 +43,7 @@
 ## P7 Defend Phase [p.63–64]
 
 - **P7-01** 玩家區每個敵人 (被 Disarm 的除外) **各自**攻擊一次，順序由玩家決定。敵人攻擊類型 = 其 `attack_defense_type`。
-- **P7-01a 雙重類型** (`Both`)：卡上兩個盾並列 (Physical 與 Photonic) 的敵人，同時具有兩種攻擊類型。防禦牠的攻擊時，**任一類型**的卡都可以用，也可以混用。適用：Greed、Wrath、Greedling、Ravager。依據：p.124 說 Wrath「has both attack types」，因此用卡防禦比較好預測。「可以混用」是由「兩種類型都算」推得，規則書沒有逐字寫出；已經 Paul 確認。
+- **P7-01a 雙重類型** (`Both`)：卡上兩個盾並列 (Physical 與 Photonic) 的敵人，同時具有兩種攻擊類型。防禦牠的攻擊時，**任一類型**的卡都可以用，也可以混用。適用：Greed、Wrath、Greedling、Ravager；以及**效果給的防禦圖示**：Waking Wraith「腐化 ≥ 3 時另有 2 {PhotonicDefense}」期間同時具有 Physical 與 Photonic 攻擊類型 (防禦值各自依卡面：Physical 3、Photonic 2)。依據：p.124 說 Wrath「has both attack types」，因此用卡防禦比較好預測。「可以混用」是由「兩種類型都算」推得，規則書沒有逐字寫出；已經 Paul 確認。效果給的防禦圖示也算攻擊類型，依據 p.63「attack type … the same as their defense type」與 p.126 圖示說明「PhotonicDefense - Enemy photonic defense (also indicates enemy attack is photonic)」(1.5.2)。
 - **P7-02 防禦 (可選)**：從手牌及/或**牌庫頂端**棄掉任意數量的卡，卡片的 `attack_type` 必須與敵人攻擊類型相同 (雙重類型見 P7-01a)。傷害減少這些卡的 `defense` 總和；傷害最低為 0，多餘的防禦值不會保留到下一次攻擊。
   - 可以連續棄掉牌庫頂端多張，只要每張類型都相符。玩家可以查看牌庫頂端的卡來判斷是否相符；類型不符就不能棄，留在牌庫頂端 (OPEN-05，Paul 確認)。
   - 牌庫空了時，玩家可以選擇重洗 (腐化 +1) 以繼續用牌庫頂端防禦 (KC-27)。

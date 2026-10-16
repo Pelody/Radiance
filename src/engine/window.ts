@@ -155,8 +155,9 @@ export function activeOptions(ctx: Ctx, phase: Phase): ActiveOpt[] {
     id: 'search',
     label: `搜尋 (Path +${p.beacons.length})`,
     rule: 'KC-29',
-    legal: p.beaconMatReady && p.beacons.length > 0,
-    reason: !p.beaconMatReady ? '本地點已搜尋過' : p.beacons.length === 0 ? '沒有信標' : undefined,
+    // KC-29 規則書 p.38 沒有要求至少 1 個信標
+    legal: p.beaconMatReady,
+    reason: !p.beaconMatReady ? '本地點已搜尋過' : undefined,
     run: function* (c: Ctx) {
       c.s.player.beaconMatReady = false;
       yield* addPath(c, c.s.player.beacons.length, 'KC-29', '搜尋行動');

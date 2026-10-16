@@ -17,6 +17,7 @@
 - 1.5：介面定案 (Paul 確認)。`20-ui.md` 完整記錄版面與視覺規則：照實體桌面配置、官方英文名詞 (UI-04a)、官方圖示優先 (UI-04b)、簡約不換行與對齊 (UI-04c)、直式軌道 (UI-06a/06b)、即時變色的決定列 (UI-08)、地圖顯示 Final Location 候選。新增 `design/` (設計稿 HTML + 截圖 + 素材) 與 `data/icons/` (從規則書圖示字型轉出的 64 個官方圖示 SVG)。
 - 1.5.1：Claude 對照 PnP 原圖核對 `data/review.csv` 全部項目：四張墊子 (腐化、成長、Shade 影響、任務板) 兩面逐格相符；6 張 Shade/Shadow 卡的攻防類型 (Greed、Wrath、Greedling、Ravager = Both；Covetous Flail = Photonic；Vanity Wisps = Physical) 與 Hunter 的 tracked 說明文字都正確。光軌道 8–10 與 11 分段的疑點已解：墊子分兩列印刷，兩段都是接戰 3。
 
+- 1.5.2：實作引擎時查規則書解決兩處不清楚的地方 (Paul 指示：不清楚就查規則書)。P7-01a：效果給的防禦圖示也代表攻擊類型 (p.63、p.126)，Waking Wraith 腐化 ≥ 3 時為雙重類型。KC-29：沒有信標也可以搜尋 (p.38 沒有數量要求)。
 ## 規則書逐頁對照表
 
 1.0 版逐頁重讀全部 128 頁後建立。每一頁不是對應到規則編號，就是說明為什麼沒有規則。之後若發現規則書某段沒寫進來，可以直接從這張表查到漏在哪一頁。

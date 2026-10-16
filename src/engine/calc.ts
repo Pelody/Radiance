@@ -1,7 +1,7 @@
 // 衍生數值 (EE-01)。預覽與實際結算共用這一套函式 (DG-18)，不另寫估算邏輯。
 import type { AttackType, Element, PlayerCardData } from './data';
 import { enemyCard, getCard, locationCard, playerCard, skillMat, treacheryCard } from './data';
-import { applyMods, isPlayerUpgraded, restriction } from './effects';
+import { activeEffects, applyMods, isPlayerUpgraded, restriction } from './effects';
 import type { GameState } from './types';
 import {
   characterStat,
@@ -112,15 +112,26 @@ export function enemyAttack(s: GameState, id: string): number {
   return Math.max(0, applyMods(s, { stat: 'enemyAttack', enemy: id, phase: s.phase }, a === 'X' ? 0 : a));
 }
 
-/** P7-01 / P7-01a 攻擊類型 = 防禦類型；Both = 兩種 */
-export function enemyTypes(_s: GameState, id: string): AttackType[] {
+function printedTypes(id: string): AttackType[] {
   const t = enemyCard(id).attack_defense_type;
   return t === 'Both' ? ['Physical', 'Photonic'] : [t];
 }
 
-/** P6-02 第 2 步：擋下多少 AP (類型相符才擋；Both 兩種都擋) */
+/**
+ * P7-01 / P7-01a 攻擊類型 = 防禦類型；Both = 兩種。
+ * 效果給的防禦圖示也代表攻擊類型 (規則書 p.126 圖示說明：PhotonicDefense「also indicates enemy attack is photonic」)。
+ */
+export function enemyTypes(s: GameState, id: string): AttackType[] {
+  const types = new Set(printedTypes(id));
+  for (const { src, def } of activeEffects(s)) {
+    if (def.extraTypes) for (const t of def.extraTypes(s, src, id)) types.add(t);
+  }
+  return (['Physical', 'Photonic'] as AttackType[]).filter((t) => types.has(t));
+}
+
+/** P6-02 第 2 步：擋下多少 AP (類型相符才擋；Both 兩種都擋)。卡面數值只屬於印刷的類型，效果加的類型由效果給數值。 */
 export function enemyDefenseVs(s: GameState, id: string, type: AttackType): number {
-  const base = enemyTypes(s, id).includes(type) ? enemyCard(id).defense : 0;
+  const base = printedTypes(id).includes(type) ? enemyCard(id).defense : 0;
   return Math.max(0, applyMods(s, { stat: 'enemyDefense', enemy: id, attackType: type }, base));
 }
 

@@ -103,6 +103,8 @@ export interface EffectDef {
   whenCompleted?: Run;
   /** EE-01 */
   modify?: (s: GameState, src: Source, q: StatQuery, v: number) => number;
+  /** P7-01a 效果給敵人的額外攻防類型 (例：Waking Wraith 另有 PhotonicDefense) */
+  extraTypes?: (s: GameState, src: Source, enemy: string) => AttackType[];
   /** EE-02 */
   restrict?: (s: GameState, src: Source, r: Restriction) => string | null;
 }

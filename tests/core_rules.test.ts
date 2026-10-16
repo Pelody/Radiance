@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { canUndo, submit, undo, view } from '../src/engine/game';
 import { cardName, playerCard, skillMat } from '../src/engine/data';
 import { characterStat } from '../src/engine/tracks';
-import { distanceBreakdown, enemyAttack, locationEV, questDarkness, travelCost } from '../src/engine/calc';
+import { distanceBreakdown, enemyAttack, enemyDefenseVs, enemyTypes, locationEV, questDarkness, travelCost } from '../src/engine/calc';
 import { skillsAdjacent, unlockableSkills, permBoosterCost } from '../src/engine/window';
 import { newLocation } from '../src/engine/world';
 import { advance, at, enemy, gameFrom, idOf, inPhase, loc, logHas, passUntil, pending, st, startScenario } from './helpers/fixture';
@@ -312,6 +312,21 @@ describe('P7 Defend', () => {
     expect(cardName(st(g).player.deck[0])).toBe('Momentum Shift');
     expect(st(g).player.deckTopKnown).toBe(true);
     expect(st(g).player.wounds).toBe(incoming);
+  });
+});
+
+describe('P7-01a 效果給的防禦圖示', () => {
+  it('Waking Wraith 腐化 ≥ 3 時同時具有 Physical 與 Photonic 攻擊類型 (p.63、p.126)', () => {
+    const s = st(startScenario());
+    const ww = enemy('Waking Wraith');
+    s.world.enemies[ww] = { id: ww, wounds: 0, progress: 0, attachments: [] };
+    s.world.playerArea.push(ww);
+    expect(enemyTypes(s, ww)).toEqual(['Physical']);
+    expect(enemyDefenseVs(s, ww, 'Photonic')).toBe(0);
+    s.world.corruption = 3;
+    expect(enemyTypes(s, ww)).toEqual(['Physical', 'Photonic']);
+    expect(enemyDefenseVs(s, ww, 'Physical')).toBe(3);
+    expect(enemyDefenseVs(s, ww, 'Photonic')).toBe(2);
   });
 });
 
