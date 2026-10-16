@@ -56,6 +56,7 @@ const URL = process.env.URL ?? 'http://localhost:5173/';
   await step('shout pull', () => btn('Sol Conspirator'));
   await step('assign consp', async () => { await pa('Sol Conspirator'); await btn('確認'); });
   await step('shout pull2', () => btn('Moltan Spy'));
+  await step('pass grow', () => btn('繼續')); // UI-10 第 4 點：XP 夠成長時停下
   await step('attacker', () => pa('Moltan Spy'));
   await p.screenshot({ path: `${out}/r1_defend.png` });
   await step('defend', () => hand('Equal Measure'));
@@ -63,6 +64,7 @@ const URL = process.env.URL ?? 'http://localhost:5173/';
   await step('rest', () => btn('不休息'));
   await step('order', async () => { await p.locator('.turnbar .card img[alt="Foresight"]').click(); await p.locator('.turnbar .card img[alt="Hasten"]').click(); await p.locator('.turnbar .card img[alt="Ember Strike"]').click(); await btn('確認'); });
   await step('extra', () => btn('完成'));
+  await step('pass grow r2', () => btn('繼續')); // 第 2 回合 Staging：XP 夠成長時停下
   await p.screenshot({ path: `${out}/r2.png` });
   const state = await p.evaluate(() => JSON.parse(localStorage.getItem('radiance.save.v1')).game.session.checkpoint.round);
   console.log('checkpoint round', state);

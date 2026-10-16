@@ -37,12 +37,18 @@ describe('介面流程：官方範例第 1 回合', () => {
     go(id('Sol Conspirator'));
     go({ option: `assign:${id('Sol Conspirator')}`, amount: 4 });
     go(id('Moltan Spy'));
+    // UI-10 第 4 點：擊敗敵人後 XP 夠成長，流程會在 Attack 窗口停下
+    expect(d().options!.some((o) => o.id === 'growAbility' && o.legal !== false)).toBe(true);
+    go('pass');
     go({ option: `attacker:${id('Moltan Spy')}` });
     go(`hand:${id('Equal Measure')}`);
     go('done');
     go('done'); // 不休息
     go(['Foresight', 'Hasten', 'Ember Strike'].map(id));
     go('done');
+    // UI-10 第 4 點：第 2 回合開始時 XP 6 夠成長，流程在 Staging 窗口停下；放棄後本回合不再因成長停下
+    expect(s().phase).toBe('staging');
+    go('pass');
     const st = s();
     expect(st.round).toBe(2);
     expect(st.phase).toBe('actionSet');
