@@ -114,10 +114,11 @@ export interface EffectDef {
     run: TriggerRun;
   };
   /** KC-12a Start of / End of */
-  phaseStart?: { phase: Phase; mandatory: boolean; run: Run };
-  phaseEnd?: { phase: Phase; mandatory: boolean; run: Run };
+  /** when：效果目前是否適用 (例：附著卡的效果只在附著時) */
+  phaseStart?: { phase: Phase; mandatory: boolean; when?: (s: GameState, src: Source) => boolean; run: Run };
+  phaseEnd?: { phase: Phase; mandatory: boolean; when?: (s: GameState, src: Source) => boolean; run: Run };
   /** EE-18a 非玩家的「X Phase: …」強制效果：一般窗口可選時點，結束窗口必定結算 */
-  phaseDuring?: { phase: Phase; run: Run };
+  phaseDuring?: { phase: Phase; when?: (s: GameState, src: Source) => boolean; run: Run };
   /** 卡片自身的 When Revealed / When Defeated / Upon Arrival / When Completed */
   whenRevealed?: Run;
   whenDefeated?: Run;

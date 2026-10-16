@@ -142,7 +142,7 @@ export function activeOptions(ctx: Ctx, phase: Phase): ActiveOpt[] {
       });
     }
     // EE-18a 階段中強制效果：一般窗口可選時點
-    if (def.phaseDuring && def.phaseDuring.phase === phase) {
+    if (def.phaseDuring && def.phaseDuring.phase === phase && (!def.phaseDuring.when || def.phaseDuring.when(s, src))) {
       const k = `${src.id}#${def.key}`;
       if (!s.roundState.resolvedPhaseEffects.includes(k)) {
         out.push({
@@ -236,9 +236,9 @@ export function* boundaryWindow(ctx: Ctx, phase: Phase, which: 'start' | 'end'):
       const b = which === 'start' ? sd.def.phaseStart : sd.def.phaseEnd;
       const k = `${tag}|${sd.src.id}#${sd.def.key}`;
       if (s.roundState.resolvedPhaseEffects.includes(k)) continue;
-      if (b && b.phase === phase) cands.push({ sd, k, mandatory: b.mandatory || isMandatory(sd.def), run: b.run, label: sd.def.label });
+      if (b && b.phase === phase && (!b.when || b.when(s, sd.src))) cands.push({ sd, k, mandatory: b.mandatory || isMandatory(sd.def), run: b.run, label: sd.def.label });
       // EE-18a 階段中強制效果：結束窗口還沒結算的一定結算
-      if (which === 'end' && sd.def.phaseDuring?.phase === phase) {
+      if (which === 'end' && sd.def.phaseDuring?.phase === phase && (!sd.def.phaseDuring.when || sd.def.phaseDuring.when(s, sd.src))) {
         const dk = `${sd.src.id}#${sd.def.key}`;
         if (!s.roundState.resolvedPhaseEffects.includes(dk))
           cands.push({ sd, k: dk, mandatory: true, run: sd.def.phaseDuring.run, label: sd.def.label });

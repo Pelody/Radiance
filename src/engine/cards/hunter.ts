@@ -309,6 +309,7 @@ defineCard('Trap of Madness', [
     phaseStart: {
       phase: 'attack',
       mandatory: true,
+      when: (_s, src) => !!host(src),
       run: function* (ctx, src) {
         const h = host(src);
         if (!h) return;
