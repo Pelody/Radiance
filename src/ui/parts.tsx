@@ -1,5 +1,5 @@
 // 共用小元件：圖示、數值小方塊 (UI-04b)、卡片 (UI-04 滑鼠移上放大、指示物數字)。
-import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useRef, type CSSProperties, type ReactNode } from 'react';
 import { cardImagePath, getCard } from '../engine/data';
 
 // 官方圖示 (data/icons，currentColor)。內嵌成 data URI：直接用 file:// 打開時，CSS mask 不能讀外部檔案。
@@ -64,6 +64,9 @@ export interface ZoomTarget {
 }
 export const ZoomContext = createContext<(z: ZoomTarget | null) => void>(() => {});
 
+/** 長按多久開始放大 (毫秒) */
+export const LONG_PRESS_MS = 400;
+
 export const CARD_W = 101;
 export const CARD_H = 141;
 
@@ -93,6 +96,14 @@ export function Card({
   style?: CSSProperties;
 }) {
   const setZoom = useContext(ZoomContext);
+  // UI-04 放大：長按才放大 (Paul 要求)；單點只出牌，長按後放開不算點擊
+  const timer = useRef<number | null>(null);
+  const zoomed = useRef(false);
+  const stop = () => {
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = null;
+    if (zoomed.current) setZoom(null);
+  };
   const c = getCard(id);
   const rotated = c.rotated;
   const width = rotated ? (h ?? Math.round((w * CARD_H) / CARD_W)) : w;
@@ -101,9 +112,25 @@ export function Card({
     <div
       className={`card${selected ? ' selected' : ''}${highlight ? ' highlight' : ''}${dim ? ' dim' : ''}${onClick ? ' clickable' : ''}${className ? ` ${className}` : ''}`}
       style={{ width, height, ...style }}
-      onClick={onClick}
-      onMouseEnter={(e) => setZoom({ id, rect: e.currentTarget.getBoundingClientRect() })}
-      onMouseLeave={() => setZoom(null)}
+      onPointerDown={(e) => {
+        zoomed.current = false;
+        const rect = e.currentTarget.getBoundingClientRect();
+        timer.current = window.setTimeout(() => {
+          zoomed.current = true;
+          setZoom({ id, rect });
+        }, LONG_PRESS_MS);
+      }}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      onContextMenu={(e) => e.preventDefault()}
+      onClick={() => {
+        if (zoomed.current) {
+          zoomed.current = false;
+          return;
+        }
+        onClick?.();
+      }}
       title={title}
     >
       <img src={cardImagePath(id)} alt={c.name ?? id} draggable={false} />
