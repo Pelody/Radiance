@@ -12,9 +12,18 @@ export interface FlowMemory {
   round: number;
   /** 本回合停下時略過的效果選項 (UI-10 第 3 點) */
   passed: string[];
+  /** 每個略過記錄當時的日誌長度 (與 passed 對應)；復原到那之前時忘記這次略過 (UI-10 第 5 點) */
+  passedAt?: number[];
 }
 
-export const emptyMemory = (): FlowMemory => ({ round: 0, passed: [] });
+export const emptyMemory = (): FlowMemory => ({ round: 0, passed: [], passedAt: [] });
+
+/** 復原後：忘記在這個狀態之後才做的略過 (舊存檔沒有 passedAt，視為 0 = 保留) */
+export function rewindMemory(mem: FlowMemory, s: GameState): FlowMemory {
+  const at = mem.passedAt ?? mem.passed.map(() => 0);
+  const keep = mem.passed.map((_, i) => at[i] < s.log.length);
+  return { round: mem.round, passed: mem.passed.filter((_, i) => keep[i]), passedAt: at.filter((_, i) => keep[i]) };
+}
 
 /** 只有好處、自動使用的效果 (UI-10：免費光 EE-23) */
 const AUTO_USE_KEYS = ['Farhome/0'];
@@ -49,8 +58,15 @@ export function shouldStop(d: Decision, s: GameState, mem: FlowMemory, settings:
 
 /** 玩家在停下的窗口按「繼續」：記住略過的效果 */
 export function rememberPass(d: Decision, s: GameState, mem: FlowMemory): FlowMemory {
-  const base = mem.round === s.round ? mem.passed : [];
-  return { round: s.round, passed: [...new Set([...base, ...stoppingEffects(d).map((o) => o.id)])] };
+  const same = mem.round === s.round;
+  const passed = same ? [...mem.passed] : [];
+  const passedAt = same ? [...(mem.passedAt ?? mem.passed.map(() => 0))] : [];
+  for (const o of stoppingEffects(d)) {
+    if (passed.includes(o.id)) continue;
+    passed.push(o.id);
+    passedAt.push(s.log.length);
+  }
+  return { round: s.round, passed, passedAt };
 }
 
 /** 自動進行到下一個要停的地方 */
@@ -75,14 +91,14 @@ export function act(g: Game, answer: unknown, mem: FlowMemory, settings: FlowSet
   return { game: autoAdvance(next, m, settings), mem: m };
 }
 
-/** UI-02 復原：跳過自動繼續的窗口，回到上一個停下來的地方 */
-export function undoToStop(g: Game, mem: FlowMemory, settings: FlowSettings): Game {
-  if (!canUndo(g)) return g;
+/** UI-02 復原：跳過自動繼續的窗口，回到上一個停下來的地方；同時忘記之後的略過 (UI-10 第 5 點) */
+export function undoToStop(g: Game, mem: FlowMemory, settings: FlowSettings): { game: Game; mem: FlowMemory } {
+  if (!canUndo(g)) return { game: g, mem };
   let h = undo(g);
   while (canUndo(h)) {
     const v = view(h);
-    if (!v.pending || shouldStop(v.pending, v.state, mem, settings)) break;
+    if (!v.pending || shouldStop(v.pending, v.state, rewindMemory(mem, v.state), settings)) break;
     h = undo(h);
   }
-  return h;
+  return { game: h, mem: rewindMemory(mem, view(h).state) };
 }

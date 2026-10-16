@@ -40,8 +40,24 @@ describe('UI-10 自動繼續', () => {
     let mem = emptyMemory();
     const before = st(g);
     ({ game: g, mem } = act(g, { action: idOf(s, 'Ember Strike'), attack: idOf(s, 'Useful Rage'), booster: idOf(s, 'Hasten') }, mem, settings));
-    const back = undoToStop(g, mem, settings);
+    const back = undoToStop(g, mem, settings).game;
     expect(view(back).pending!.type).toBe('actionSet');
     expect(st(back)).toEqual(before);
+  });
+
+  it('UI-10 第 5 點：復原回到略過的窗口時，忘記那次略過', () => {
+    let g = autoAdvance(startScenario(), emptyMemory(), settings);
+    const s = st(g);
+    let mem = emptyMemory();
+    ({ game: g, mem } = act(g, { action: idOf(s, 'Ember Strike'), attack: idOf(s, 'Useful Rage'), booster: idOf(s, 'Hasten') }, mem, settings));
+    const w = view(g).pending!;
+    expect(w.type).toBe('window');
+    const logAtWindow = st(g).log.length;
+    ({ game: g, mem } = act(g, 'pass', mem, settings));
+    expect(mem.passed.length).toBeGreaterThan(0);
+    const r = undoToStop(g, mem, settings);
+    expect(st(r.game).log.length).toBe(logAtWindow);
+    expect(view(r.game).pending!.prompt).toBe(w.prompt);
+    expect(r.mem.passed).toEqual([]);
   });
 });

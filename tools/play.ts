@@ -3,6 +3,8 @@
 //   node tools/.play/play.js show
 //   node tools/.play/play.js a '<回答 JSON 或選項 id>'
 //   node tools/.play/play.js undo
+//   node tools/.play/play.js text   (場上卡片的完整文字)
+//   node tools/.play/play.js log [N]
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { deserialize, newGame, serialize, view, type Game } from '../src/engine/game';
 import { act, autoAdvance, emptyMemory, undoToStop, type FlowMemory } from '../src/ui/flow';
@@ -30,7 +32,7 @@ import {
   restValue,
   cardDefense,
 } from '../src/engine/calc';
-import { cardName, enemyCard, locationCard, treacheryCard } from '../src/engine/data';
+import { cardName, enemyCard, getCard, locationCard, treacheryCard } from '../src/engine/data';
 import { skillUnlocked, skillUsable } from '../src/engine/effects';
 import { shadeInfo } from '../src/engine/shades';
 import type { GameState } from '../src/engine/types';
@@ -152,12 +154,26 @@ if (cmd === 'new') {
     const r = act(st.g, ans, st.mem, settings);
     const pos = print(r.game, st.logPos);
     save(r.game, r.mem, pos);
+  } else if (cmd === 'text') {
+    // 紙本玩家看得到的卡片文字：地點、Treachery、Shade、場上敵人、手牌與行動組
+    const s = view(st.g).state;
+    const a = s.player.actionSet;
+    const ids = [s.world.location.id, ...(s.world.activeTreachery ? [s.world.activeTreachery] : []), ...s.world.questArea, ...s.world.playerArea, ...s.player.hand, a.action, a.attack, a.booster, a.explore, ...s.player.permBoosters, ...s.player.beacons, ...s.player.hobbyMarket];
+    const seen = new Set<string>();
+    for (const id of ids) {
+      if (!id) continue;
+      const n = cardName(id);
+      if (seen.has(n)) continue;
+      seen.add(n);
+      const c = getCard(id) as { raw_text?: string };
+      console.log(`[${n}] ${(c.raw_text ?? '').replace(/\s+/g, ' ')}`);
+    }
   } else if (cmd === 'log') {
     const logs = view(st.g).state.log;
     for (const l of logs.slice(-Number(args[0] ?? 40))) console.log(`  ${l.round}/${l.phase} [${l.rule}] ${l.text}`);
   } else if (cmd === 'undo') {
-    const g = undoToStop(st.g, st.mem, settings);
-    print(g, 0);
-    save(g, st.mem, view(g).state.log.length);
+    const r = undoToStop(st.g, st.mem, settings);
+    print(r.game, 0);
+    save(r.game, r.mem, view(r.game).state.log.length);
   }
 }

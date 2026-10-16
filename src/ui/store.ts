@@ -157,7 +157,7 @@ export function useGameStore(): GameStore {
 
   const undo = useCallback(() => {
     if (!saved) return;
-    setSaved({ game: undoToStop(saved.game, saved.mem, settings), mem: saved.mem });
+    setSaved(undoToStop(saved.game, saved.mem, settings));
     setEvents([]);
     setError(null);
   }, [saved, settings]);
