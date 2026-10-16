@@ -110,13 +110,19 @@ function Zoom({ z, scale }: { z: ZoomTarget; scale: number }) {
   const c = getCard(z.id);
   const stageEl = document.querySelector('.stage') as HTMLElement | null;
   const base = stageEl?.getBoundingClientRect() ?? { left: 0, top: 0 };
-  const big = c.type === 'skill_mat' ? { w: 505, h: 318 } : c.rotated ? { w: 360, h: 257 } : { w: 257, h: 360 };
+  // 技能墊放大到看得清技能文字，放在畫面中央
+  const mat = c.type === 'skill_mat';
+  const big = mat ? { w: 1010, h: 636 } : c.rotated ? { w: 360, h: 257 } : { w: 257, h: 360 };
   const x = (z.rect.left - base.left) / scale;
   const y = (z.rect.top - base.top) / scale;
   const wCard = z.rect.width / scale;
   let left = x + wCard + 12;
   if (left + big.w > W) left = x - big.w - 12;
-  const top = Math.max(8, Math.min(H - big.h - 8, y - 40));
+  let top = Math.max(8, Math.min(H - big.h - 8, y - 40));
+  if (mat) {
+    left = (W - big.w) / 2;
+    top = Math.max(8, y - big.h - 12);
+  }
   return (
     <div className="zoom" style={{ left, top, width: big.w, height: big.h }}>
       <img src={cardImagePath(z.id)} alt={c.name ?? z.id} />

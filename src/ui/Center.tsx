@@ -4,7 +4,7 @@ import { cardName, skillMat } from '../engine/data';
 import { skillUsable } from '../engine/effects';
 import type { SkillState } from '../engine/types';
 import { useUI, windowOption } from './ctx';
-import { Badge, Card, Icon, Panel, Slot, Stat } from './parts';
+import { Badge, Card, Icon, Panel, Slot, Stat, useLongPressZoom } from './parts';
 
 // ---------------------------------------------------------------- 任務區
 
@@ -156,8 +156,9 @@ function Mat({ name }: { name: string }) {
   const mat = skillMat(name);
   const look = preview?.complete ? preview.state : s;
   const skills = s.player.skills.filter((k) => k.mat === mat.mat_type);
+  const lp = useLongPressZoom(mat.id); // 長按墊子 (含技能) 放大看技能文字
   return (
-    <div className="mat" style={{ width: MAT_W, height: MAT_H }}>
+    <div className="mat" style={{ width: MAT_W, height: MAT_H }} {...lp.handlers}>
       <img src={`cards/${mat.id}.webp`} alt={name} draggable={false} />
       {skills.map((sk) => {
         const r = skillRect(sk);
@@ -170,7 +171,7 @@ function Mat({ name }: { name: string }) {
             className={`skill${sk.unlocked ? '' : ' locked'}${usable ? ' usable' : ''}${o ? ' clickable' : ''}`}
             style={{ left: r.l * MAT_W, top: r.t * MAT_H, width: r.w * MAT_W, height: r.h * MAT_H }}
             title={`${sk.name}：${why}${o ? `\n點擊：${o.label}` : ''} (DG-16)`}
-            onClick={o ? () => submit({ option: o.id }) : undefined}
+            onClick={o ? lp.click(() => submit({ option: o.id })) : undefined}
           >
             <span className={`cube ${sk.cubeElement}${sk.exhausted ? ' x' : ''}`}>{sk.cubeElement[0]}</span>
             {usable && <span className="usable-tag">可用</span>}

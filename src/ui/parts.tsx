@@ -1,5 +1,6 @@
 // 共用小元件：圖示、數值小方塊 (UI-04b)、卡片 (UI-04 滑鼠移上放大、指示物數字)。
 import { createContext, useContext, useRef, type CSSProperties, type ReactNode } from 'react';
+import type React from 'react';
 import { cardImagePath, getCard } from '../engine/data';
 
 // 官方圖示 (data/icons，currentColor)。內嵌成 data URI：直接用 file:// 打開時，CSS mask 不能讀外部檔案。
@@ -68,6 +69,46 @@ export const ZoomContext = createContext<(z: ZoomTarget | null) => void>(() => {
 export const LONG_PRESS_MS = 400;
 
 export const CARD_W = 101;
+
+/**
+ * UI-04 放大：長按才放大 (Paul 要求)；單點照常操作，長按後放開不算點擊。
+ * 卡片與技能墊共用。
+ */
+export function useLongPressZoom(id: string) {
+  const setZoom = useContext(ZoomContext);
+  const timer = useRef<number | null>(null);
+  const zoomed = useRef(false);
+  const stop = () => {
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = null;
+    if (zoomed.current) setZoom(null);
+  };
+  return {
+    handlers: {
+      onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+        zoomed.current = false;
+        const rect = e.currentTarget.getBoundingClientRect();
+        timer.current = window.setTimeout(() => {
+          zoomed.current = true;
+          setZoom({ id, rect });
+        }, LONG_PRESS_MS);
+      },
+      onPointerUp: stop,
+      onPointerLeave: stop,
+      onPointerCancel: stop,
+      onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+    },
+    /** 包住點擊：剛長按放大過就不執行 */
+    click: (f?: () => void) => () => {
+      if (zoomed.current) {
+        zoomed.current = false;
+        return;
+      }
+      f?.();
+    },
+  };
+}
+
 export const CARD_H = 141;
 
 export function Card({
@@ -95,15 +136,7 @@ export function Card({
   className?: string;
   style?: CSSProperties;
 }) {
-  const setZoom = useContext(ZoomContext);
-  // UI-04 放大：長按才放大 (Paul 要求)；單點只出牌，長按後放開不算點擊
-  const timer = useRef<number | null>(null);
-  const zoomed = useRef(false);
-  const stop = () => {
-    if (timer.current !== null) window.clearTimeout(timer.current);
-    timer.current = null;
-    if (zoomed.current) setZoom(null);
-  };
+  const lp = useLongPressZoom(id);
   const c = getCard(id);
   const rotated = c.rotated;
   const width = rotated ? (h ?? Math.round((w * CARD_H) / CARD_W)) : w;
@@ -112,25 +145,8 @@ export function Card({
     <div
       className={`card${selected ? ' selected' : ''}${highlight ? ' highlight' : ''}${dim ? ' dim' : ''}${onClick ? ' clickable' : ''}${className ? ` ${className}` : ''}`}
       style={{ width, height, ...style }}
-      onPointerDown={(e) => {
-        zoomed.current = false;
-        const rect = e.currentTarget.getBoundingClientRect();
-        timer.current = window.setTimeout(() => {
-          zoomed.current = true;
-          setZoom({ id, rect });
-        }, LONG_PRESS_MS);
-      }}
-      onPointerUp={stop}
-      onPointerLeave={stop}
-      onPointerCancel={stop}
-      onContextMenu={(e) => e.preventDefault()}
-      onClick={() => {
-        if (zoomed.current) {
-          zoomed.current = false;
-          return;
-        }
-        onClick?.();
-      }}
+      {...lp.handlers}
+      onClick={lp.click(onClick)}
       title={title}
     >
       <img src={cardImagePath(id)} alt={c.name ?? id} draggable={false} />
