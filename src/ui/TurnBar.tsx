@@ -1,14 +1,15 @@
-// UI-08「輪到你」決定列：DG-08 ~ DG-14 的預覽即時更新；比選擇前變高綠色、變低紅色。
+// UI-08 / UI-11 決定提示列 (細)：DG-08 ~ DG-14 的預覽即時更新；比選擇前變高綠色、變低紅色。
 import { useEffect, useState } from 'react';
 import type { Option } from '../engine/core';
 import { apAvailable, apBreakdown, enemyHP, engagementCount, epBreakdown } from '../engine/calc';
 import { cardName } from '../engine/data';
 import { attackPreview, validateActionSet } from '../engine/phases';
+import { PHASES, PHASE_NAMES, type Phase } from '../engine/types';
 import { useUI } from './ctx';
-import { Card, Icon, Stat } from './parts';
-import { coverPreview, travelPreview } from './preview';
+import { isModalDecision } from './overlays';
+import { Icon, Stat } from './parts';
 
-export function TurnBar({ error }: { error: string | null }) {
+export function TurnBar({ error, decisionHidden, onShowDecision }: { error: string | null; decisionHidden: boolean; onShowDecision: () => void }) {
   const { d, s } = useUI();
   if (s.outcome) {
     return (
@@ -21,8 +22,22 @@ export function TurnBar({ error }: { error: string | null }) {
   if (!d) return <section className="turnbar" />;
   return (
     <section className="turnbar" aria-label="目前的決定">
-      <span className="tb-title">輪到你</span>
-      <Body />
+      <span className="tb-phase" title={PHASE_NAMES[s.phase as Phase]}>
+        {PHASES.indexOf(s.phase as Phase) + 1} {PHASE_NAMES[s.phase as Phase]}
+      </span>
+      {isModalDecision(d) ? (
+        <>
+          <Prompt text={d.prompt} rule={d.rule} />
+          <div className="tb-preview" />
+          {decisionHidden && (
+            <button className="primary pinned" onClick={onShowDecision}>
+              回到決定
+            </button>
+          )}
+        </>
+      ) : (
+        <Body />
+      )}
       {error && (
         <span className="tb-error" title={error}>
           {error}
@@ -39,14 +54,8 @@ function Body() {
       return <ActionSetBody />;
     case 'window':
       return <WindowBody />;
-    case 'number':
-      return <NumberBody />;
-    case 'cards':
-      return <CardsBody />;
-    case 'order':
-      return <OrderBody />;
     default:
-      return <ChooseBody />;
+      return <DefendBody />;
   }
 }
 
@@ -118,26 +127,25 @@ function WindowBody() {
   const opts = d!.options!.filter((o) => o.legal !== false);
   const assignOpts = opts.filter((o) => o.id.startsWith('assign:'));
   const attackerOpts = opts.filter((o) => o.id.startsWith('attacker:'));
-  const others = opts.filter((o) => !o.id.startsWith('assign:') && !o.id.startsWith('attacker:') && o.id !== 'pass');
-  // UI-10：會讓畫面停下的效果放外面，其他收進選單
-  const main = others.filter((o) => o.id.startsWith('effect:') || o.id.startsWith('skill:'));
-  const more = others.filter((o) => !main.includes(o));
+  // UI-11d：效果在卡片 / 技能上發光，點了就用；這裡的選單是備用 (含成長、搜尋、橫置以啟動)
+  const effects = opts.filter((o) => o.id.startsWith('effect:') || o.id.startsWith('skill'));
+  const more = opts.filter((o) => !o.id.startsWith('assign:') && !o.id.startsWith('attacker:') && o.id !== 'pass' && !effects.includes(o));
   const pass = d!.options!.find((o) => o.id === 'pass');
   if (assign && assignOpts.some((o) => o.id === `assign:${assign}`)) return <AssignBody enemy={assign} onCancel={() => setAssign(null)} />;
+  const hint =
+    assignOpts.length > 0
+      ? '點 Player Area 的敵人分配 AP'
+      : attackerOpts.length > 0
+        ? '點 Player Area 的敵人，決定下一個攻擊者'
+        : effects.length > 0
+          ? '可以使用發光的卡片或技能，或按繼續'
+          : d!.prompt;
   return (
     <>
-      <Prompt text={d!.prompt} rule={d!.rule} />
-      <div className="tb-preview">
-        {assignOpts.length > 0 && (
-          <>
-            <Stat icon="Attack" value={apAvailable(s)} title="剩餘 AP" big />
-            <span className="muted small">點 Player Area 的敵人分配 AP</span>
-          </>
-        )}
-        {attackerOpts.length > 0 && <span className="muted small">點敵人決定下一個攻擊者 (P7-01)</span>}
-      </div>
-      <OptButtons options={[...attackerOpts, ...main]} onPick={(o) => submit({ option: o.id })} />
-      {more.length > 0 && <MoreMenu options={more} onPick={(o) => submit({ option: o.id })} />}
+      <Prompt text={hint} rule={d!.rule} />
+      <div className="tb-preview">{assignOpts.length > 0 && <Stat icon="Attack" value={apAvailable(s)} title="剩餘 AP" big />}</div>
+      {effects.length > 0 && <MoreMenu label={`效果 ${effects.length} ▾`} options={effects} onPick={(o) => submit({ option: o.id })} />}
+      {more.length > 0 && <MoreMenu label="其他 ▾" options={more} onPick={(o) => submit({ option: o.id })} />}
       {pass && (
         <button
           className="primary pinned"
@@ -153,11 +161,11 @@ function WindowBody() {
 }
 
 /** 次要選項 (成長、搜尋、橫置以啟動…)：收在選單裡，墊子與上方按鈕也能直接用 */
-function MoreMenu({ options, onPick }: { options: Option[]; onPick: (o: Option) => void }) {
+function MoreMenu({ label = '其他 ▾', options, onPick }: { label?: string; options: Option[]; onPick: (o: Option) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="more">
-      <button onClick={() => setOpen(!open)}>其他 ▾</button>
+      <button onClick={() => setOpen(!open)}>{label}</button>
       {open && (
         <div className="more-list" onMouseLeave={() => setOpen(false)}>
           {options.map((o) => (
@@ -216,139 +224,25 @@ function AssignBody({ enemy, onCancel }: { enemy: string; onCancel: () => void }
   );
 }
 
-// ---------------------------------------------------------------- 數字 (P4-02 cover)
+// ---------------------------------------------------------------- P7-02 防禦 (點手牌)
 
-function NumberBody() {
-  const { s, d, submit } = useUI();
-  const min = d!.min ?? 0;
-  const max = d!.max ?? 0;
-  const cover = d!.rule === 'P4-02';
-  const init = cover ? max : min;
-  const [n, setN] = useState(init);
-  useEffect(() => setN(init), [d, init]);
-  const pv = cover ? coverPreview(s, n) : null;
-  return (
-    <>
-      <Prompt text={d!.prompt} rule={d!.rule} />
-      <div className="tb-preview">
-        <div className="stepper">
-          <button onClick={() => setN(Math.max(min, n - 1))}>−</button>
-          {cover ? <Stat icon="Darkness" value={n} title="抵消的黑暗" big /> : <Stat value={n} of={max} title={`${min}–${max}`} big />}
-          <button onClick={() => setN(Math.min(max, n + 1))}>+</button>
-        </div>
-        {pv && (
-          <>
-            <Stat
-              icon="Progress"
-              value={pv.treachery}
-              of={pv.pv}
-              title={`Treachery Progress${pv.completes ? '：會完成！' : ''}`}
-              delta={pv.treachery - s.world.treacheryProgress}
-              big
-            />
-            <Stat icon="MainExplore" value={pv.explore} title="探索 EP" big />
-          </>
-        )}
-      </div>
-      <div className="tb-buttons">
-        <button className="primary" onClick={() => submit(n)}>
-          確認
-        </button>
-      </div>
-    </>
-  );
-}
-
-// ---------------------------------------------------------------- 選卡 (信標)
-
-function CardsBody() {
+function DefendBody() {
   const { d, submit } = useUI();
-  const [picked, setPicked] = useState<string[]>([]);
-  useEffect(() => setPicked([]), [d]);
-  const min = d!.min ?? 0;
-  const max = d!.max ?? d!.cards!.length;
-  const ok = picked.length >= min && picked.length <= max;
-  const toggle = (id: string) => {
-    if (picked.includes(id)) setPicked(picked.filter((x) => x !== id));
-    else if (max === 1) setPicked([id]);
-    else if (picked.length < max) setPicked([...picked, id]);
-  };
+  const opts = (d!.options ?? []).filter((o) => !o.id.startsWith('hand:'));
+  const done = opts.find((o) => o.id === 'done');
+  const rest = opts.filter((o) => o !== done);
   return (
     <>
       <Prompt text={d!.prompt} rule={d!.rule} />
       <div className="tb-preview">
-        {d!.cards!.map((id) => (
-          <Card key={id} id={id} w={56} selected={picked.includes(id)} title={cardName(id)} onClick={() => toggle(id)} />
-        ))}
-        {d!.rule === 'P4-01' ? (
-          <Stat icon="ExploreBoost" value={`+${picked.length * 2}`} title="探索加成" delta={picked.length} big />
-        ) : (
-          <Stat value={picked.length} of={min === max ? max : `${min}–${max}`} title="已選張數" big />
-        )}
+        <span className="muted small">點手牌中可防禦的卡 (金框)</span>
       </div>
-      <div className="tb-buttons">
-        <button className="primary" disabled={!ok} onClick={() => submit(picked)}>
-          確認
+      <OptButtons options={rest} onPick={(o) => submit(o.id)} />
+      {done && (
+        <button className="primary pinned" onClick={() => submit(done.id)}>
+          {done.label}
         </button>
-      </div>
-    </>
-  );
-}
-
-// ---------------------------------------------------------------- 排序 (P8-04)
-
-function OrderBody() {
-  const { d, submit } = useUI();
-  const [order, setOrder] = useState<string[]>([]);
-  useEffect(() => setOrder([]), [d]);
-  const left = d!.cards!.filter((x) => !order.includes(x));
-  return (
-    <>
-      <Prompt text={`${d!.prompt}：依序點卡`} rule={d!.rule} />
-      <div className="tb-preview">
-        {order.map((id, i) => (
-          <span key={id} className="order-chip" title={cardName(id)}>
-            {i + 1}. {cardName(id)}
-          </span>
-        ))}
-        {left.map((id) => (
-          <Card key={id} id={id} w={40} onClick={() => setOrder([...order, id])} />
-        ))}
-      </div>
-      <div className="tb-buttons">
-        <button onClick={() => setOrder([])}>重選</button>
-        <button className="primary" disabled={left.length > 0} onClick={() => submit(order)}>
-          確認
-        </button>
-      </div>
-    </>
-  );
-}
-
-// ---------------------------------------------------------------- 一般選擇
-
-function ChooseBody() {
-  const { s, d, submit } = useUI();
-  const opts = d!.options ?? [];
-  const revealed = s.world.revealedLocation;
-  const travelPv = d!.rule === 'T1c' && revealed ? travelPreview(s, revealed, s.world.deferred.length) : null;
-  // P7-02 手牌的卡直接點手牌，這裡只列其他選項
-  const shown = d!.rule === 'P7-02' ? opts.filter((o) => !o.id.startsWith('hand:')) : opts;
-  return (
-    <>
-      <Prompt text={d!.prompt} rule={d!.rule} />
-      <div className="tb-preview">
-        {travelPv && (
-          <>
-            <Stat icon="Distance" value={travelPv.distance.total} title={`距離 = 地理 ${travelPv.distance.geographic} + Obstacle ${travelPv.distance.obstacles} − Path ${travelPv.distance.paths} + 延後 ${travelPv.distance.deferred}${travelPv.distance.effects ? ` + 效果 ${travelPv.distance.effects}` : ''} (DG-10)`} big />
-            <Stat icon="ThreatTrack" value={`+${travelPv.cost.threat}`} title="威脅軌道推進" big />
-            <Stat icon="ResistanceTrack" value={`+${travelPv.cost.resistance}`} title="抗性軌道推進" big />
-            {travelPv.newTokens > 0 && <Stat icon="ThreatToken" value={travelPv.newTokens} title="新地點的 Threat token (T2c、T3b)" big />}
-          </>
-        )}
-        {d!.rule === 'P7-02' && <span className="muted small">點手牌中可防禦的卡 (金框)</span>}
-      </div>
-      <OptButtons options={shown} onPick={(o) => submit(o.id)} />
+      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 // UI-10 遇到要選擇的才停；UI-02 復原回到上一個停下的地方。
 import { describe, expect, it } from 'vitest';
 import { act, autoAdvance, emptyMemory, undoToStop, type FlowSettings } from '../src/ui/flow';
+import { resolutionToShow } from '../src/ui/store';
 import { view } from '../src/engine/game';
 import { idOf, st, startScenario } from './helpers/fixture';
 
@@ -59,5 +60,15 @@ describe('UI-10 自動繼續', () => {
     expect(st(r.game).log.length).toBe(logAtWindow);
     expect(view(r.game).pending!.prompt).toBe(w.prompt);
     expect(r.mem.passed).toEqual([]);
+  });
+});
+
+describe('UI-11b 結算視窗', () => {
+  const e = (phase: string, text: string, rule = 'X') => ({ round: 1, phase: phase as never, rule, text });
+  it('跨過階段才跳視窗；同一階段的小動作不跳', () => {
+    expect(resolutionToShow([e('attack', '5 AP → A')], { round: 1, phase: 'attack' }, { round: 1, phase: 'attack' })).toBeNull();
+    expect(resolutionToShow([e('attack', '擊敗 A')], { round: 1, phase: 'attack' }, { round: 1, phase: 'attack' })).not.toBeNull();
+    expect(resolutionToShow([e('darkness', 'x')], { round: 1, phase: 'darkness' }, { round: 1, phase: 'explore' })).not.toBeNull();
+    expect(resolutionToShow([], { round: 1, phase: 'darkness' }, { round: 2, phase: 'staging' })).toBeNull();
   });
 });

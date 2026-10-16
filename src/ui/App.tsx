@@ -5,7 +5,9 @@ import { Counts, StatusPanel, Tracks } from './Right';
 import { Hand, PlayerArea, PlayerBoard, QuestArea } from './Center';
 import { Header } from './Header';
 import { LogPanel, MapPanel, WorldPanel } from './World';
-import { EventsOverlay, GameOver, GrowthModal, SettingsModal } from './Modals';
+import { GameOver, GrowthModal, SettingsModal } from './Modals';
+import { DecisionModal, EffectPicker, PhaseIntro, Resolution, isModalDecision } from './overlays';
+import type { Option } from '../engine/core';
 import { NewGame } from './NewGame';
 import { TurnBar } from './TurnBar';
 import { UIContext, makeOptLookup, type UI } from './ctx';
@@ -34,6 +36,12 @@ export function App() {
   const [sel, setSel] = useState<ActionSel>({});
   const [assign, setAssign] = useState<string | null>(null);
   const [modal, setModal] = useState<'growth' | 'settings' | null>(null);
+  /** UI-11a 本次開啟已經看過開場的階段 (round|phase) */
+  const [introduced, setIntroduced] = useState<Set<string>>(() => new Set());
+  /** UI-11c 決定視窗暫時收起 (看盤面) */
+  const [hidden, setHidden] = useState(false);
+  /** UI-11d 同一張卡有多個效果 */
+  const [picker, setPicker] = useState<Option[] | null>(null);
   const v = store.view;
 
   // 待決策改變時清掉暫存的選擇
@@ -41,13 +49,15 @@ export function App() {
   useEffect(() => {
     if (v?.pending?.type !== 'actionSet') setSel({});
     setAssign(null);
+    setHidden(false);
+    setPicker(null);
   }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const ui: UI | null = useMemo(() => {
     if (!v) return null;
     const d = v.pending;
     const preview = d?.type === 'actionSet' ? actionSetPreview(v.state, sel) : null;
-    return { s: v.state, d, submit: store.submit, sel, setSel, preview, assign, setAssign, ...makeOptLookup(d) };
+    return { s: v.state, d, submit: store.submit, sel, setSel, preview, assign, setAssign, pickEffect: setPicker, ...makeOptLookup(d) };
   }, [v, sel, assign, store.submit]);
 
   const stage = (content: React.ReactNode) => (
@@ -59,6 +69,12 @@ export function App() {
   );
 
   if (!ui) return stage(<NewGame onStart={store.start} />);
+
+  // UI-11 彈出視窗一次只開一個：結算 → 階段開場 → 決定視窗；遊戲結束在結算之後
+  const introKey = `${ui.s.round}|${ui.s.phase}`;
+  const showResolution = store.events.length > 0;
+  const showIntro = !showResolution && !ui.s.outcome && !!ui.d && store.settings.phaseIntro !== false && !introduced.has(introKey);
+  const showDecision = !showResolution && !showIntro && !ui.s.outcome && isModalDecision(ui.d) && !hidden;
 
   return stage(
     <UIContext.Provider value={ui}>
@@ -74,7 +90,7 @@ export function App() {
             <main className="center">
               <QuestArea />
               <PlayerArea />
-              <TurnBar error={store.error} />
+              <TurnBar error={store.error} decisionHidden={hidden} onShowDecision={() => setHidden(false)} />
               <PlayerBoard />
               <Hand />
             </main>
@@ -97,8 +113,20 @@ export function App() {
               }}
             />
           )}
-          {store.events.length > 0 && !ui.s.outcome && <EventsOverlay events={store.events} onClose={store.dismissEvents} />}
-          {ui.s.outcome && <GameOver onNew={store.quit} />}
+          {showResolution && <Resolution key={store.events.length} events={store.events} speed={store.settings.animSpeed} onClose={store.dismissEvents} />}
+          {showIntro && <PhaseIntro onClose={() => setIntroduced(new Set([...introduced, introKey]))} />}
+          {showDecision && <DecisionModal onHide={() => setHidden(true)} />}
+          {picker && (
+            <EffectPicker
+              options={picker}
+              onClose={() => setPicker(null)}
+              onPick={(o) => {
+                setPicker(null);
+                store.submit({ option: o.id });
+              }}
+            />
+          )}
+          {ui.s.outcome && !showResolution && <GameOver onNew={store.quit} />}
         </div>
       </ZoomContext.Provider>
     </UIContext.Provider>,

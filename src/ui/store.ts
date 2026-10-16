@@ -44,19 +44,33 @@ function save(key: string, value: unknown): void {
   }
 }
 
-/** UI-03 需要停下來讓玩家看清楚的重要事件 */
-export function importantEvents(entries: LogEntry[]): LogEntry[] {
-  return entries.filter(
-    (e) =>
-      (e.rule === 'TR-01' && e.text.startsWith('完成 Treachery')) ||
-      (e.text.startsWith('腐化 ') && e.text.includes('→')) ||
-      (e.rule === 'P5-04' && e.text.includes('已探索')) ||
-      e.rule === 'FL-02' ||
-      e.text.startsWith('擊敗') ||
-      (e.rule === 'SH-04' && e.text.includes('進場')) ||
-      e.text.startsWith('失敗') ||
-      e.rule === 'WIN-01',
+/** UI-03 需要停下來讓玩家看清楚的重要事件 (結算視窗裡用金色標出) */
+export function isImportant(e: LogEntry): boolean {
+  return (
+    (e.rule === 'TR-01' && e.text.startsWith('完成 Treachery')) ||
+    (e.text.startsWith('腐化 ') && e.text.includes('→')) ||
+    (e.rule === 'P5-04' && e.text.includes('已探索')) ||
+    e.rule === 'FL-02' ||
+    e.text.startsWith('擊敗') ||
+    (e.rule === 'SH-04' && e.text.includes('進場')) ||
+    e.text.startsWith('失敗') ||
+    e.rule === 'WIN-01'
   );
+}
+
+export function importantEvents(entries: LogEntry[]): LogEntry[] {
+  return entries.filter(isImportant);
+}
+
+/**
+ * UI-11b 這一步要不要跳出結算視窗：跨過了階段 (含自動進行的階段)、有重要事件、或遊戲結束。
+ * 同一個階段裡的小動作 (例：分配 AP 沒有擊敗敵人) 只寫日誌，不跳視窗。
+ */
+export function resolutionToShow(entries: LogEntry[], before: { round: number; phase: string }, after: { round: number; phase: string; outcome?: unknown }): LogEntry[] | null {
+  if (!entries.length) return null;
+  const moved = before.round !== after.round || before.phase !== after.phase;
+  if (moved || after.outcome || entries.some(isImportant)) return entries;
+  return null;
 }
 
 export interface GameStore {
@@ -64,6 +78,7 @@ export interface GameStore {
   view: View | null;
   settings: FlowSettings;
   error: string | null;
+  /** UI-11b 等著播放的結算內容 */
   events: LogEntry[];
   canUndo: boolean;
   start: (o: SetupOptions) => void;
@@ -116,14 +131,14 @@ export function useGameStore(): GameStore {
   }, []);
 
   const run = useCallback(
-    (f: () => Saved, before: number) => {
+    (f: () => Saved, before: number, at: { round: number; phase: string }) => {
       try {
         const next = f();
         setSaved(next);
         setError(null);
-        const after = view(next.game).state.log;
-        const ev = importantEvents(after.slice(before));
-        if (ev.length) setEvents((old) => [...old, ...ev]);
+        const st = view(next.game).state;
+        const ev = resolutionToShow(st.log.slice(before), at, st);
+        if (ev) setEvents((old) => [...old, ...ev]);
       } catch (e) {
         if (e instanceof InvalidAnswer) setError(e.message);
         else {
@@ -138,8 +153,8 @@ export function useGameStore(): GameStore {
   const start = useCallback(
     (o: SetupOptions) => {
       const mem = emptyMemory();
-      run(() => ({ game: autoAdvance(newGame(o), mem, settings), mem }), 0);
       setEvents([]);
+      run(() => ({ game: autoAdvance(newGame(o), mem, settings), mem }), 0, { round: -1, phase: '' });
     },
     [run, settings],
   );
@@ -150,7 +165,7 @@ export function useGameStore(): GameStore {
       run(() => {
         const r = act(saved.game, answer, saved.mem, settings);
         return { game: r.game, mem: r.mem };
-      }, v.state.log.length);
+      }, v.state.log.length, { round: v.state.round, phase: v.state.phase });
     },
     [saved, v, run, settings],
   );

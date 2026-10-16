@@ -19,6 +19,8 @@ export interface UI {
   opt: (id: string) => Option | undefined;
   /** 待決策中任何選項 (含不合法，用來顯示原因) */
   anyOpt: (id: string) => Option | undefined;
+  /** UI-11d 同一張卡有多個效果時跳出選單 */
+  pickEffect: (options: Option[]) => void;
 }
 
 export const UIContext = createContext<UI | null>(null);
@@ -35,6 +37,12 @@ export function makeOptLookup(d: Decision | null) {
     opt: (id: string) => all.find((o) => o.id === id && o.legal !== false),
     anyOpt: (id: string) => all.find((o) => o.id === id),
   };
+}
+
+/** UI-11d 窗口中這張卡可以用的效果 (卡片發光、點了就用) */
+export function cardEffects(d: Decision | null, cardId: string): Option[] {
+  if (!d || d.type !== 'window') return [];
+  return (d.options ?? []).filter((o) => o.legal !== false && o.id.startsWith('effect:') && o.data?.cardId === cardId);
 }
 
 /** 窗口中技能或效果的選項 (點墊子上的技能 / 卡片時使用) */

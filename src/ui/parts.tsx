@@ -1,7 +1,8 @@
 // 共用小元件：圖示、數值小方塊 (UI-04b)、卡片 (UI-04 滑鼠移上放大、指示物數字)。
-import { createContext, useContext, useRef, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import type React from 'react';
 import { cardImagePath, getCard } from '../engine/data';
+import { UIContext, cardEffects } from './ctx';
 
 // 官方圖示 (data/icons，currentColor)。內嵌成 data URI：直接用 file:// 打開時，CSS mask 不能讀外部檔案。
 const ICON_SVG = import.meta.glob('../../data/icons/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -90,6 +91,14 @@ export function useLongPressZoom(id: string) {
     if (zoomed.current) setZoom(null);
     zoomed.current = false;
   };
+  // 卡片消失時 (例：點了決定視窗裡的卡) 也要關掉放大，不然會一直留在畫面上
+  useEffect(
+    () => () => {
+      if (timer.current !== null) window.clearTimeout(timer.current);
+      if (zoomed.current) setZoom(null);
+    },
+    [], // eslint-disable-line react-hooks/exhaustive-deps
+  );
   const start = (e: React.PointerEvent<HTMLElement>, ms: number) => {
     clear();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -156,13 +165,20 @@ export function Card({
   style?: CSSProperties;
 }) {
   const lp = useLongPressZoom(id);
+  const ui = useContext(UIContext);
+  // UI-11d：沒有其他點擊用途時，有可用效果的卡會發光，點了就用
+  const effects = !onClick && ui ? cardEffects(ui.d, id) : [];
+  if (effects.length) {
+    onClick = () => (effects.length === 1 ? ui!.submit({ option: effects[0].id }) : ui!.pickEffect(effects));
+    title = `${title ? `${title}\n` : ''}點擊使用：${effects.map((o) => o.label).join(' / ')}`;
+  }
   const c = getCard(id);
   const rotated = c.rotated;
   const width = rotated ? (h ?? Math.round((w * CARD_H) / CARD_W)) : w;
   const height = rotated ? w : (h ?? Math.round((w * CARD_H) / CARD_W));
   return (
     <div
-      className={`card${selected ? ' selected' : ''}${highlight ? ' highlight' : ''}${dim ? ' dim' : ''}${onClick ? ' clickable' : ''}${className ? ` ${className}` : ''}`}
+      className={`card${selected ? ' selected' : ''}${highlight ? ' highlight' : ''}${dim ? ' dim' : ''}${onClick ? ' clickable' : ''}${effects.length ? ' effect' : ''}${className ? ` ${className}` : ''}`}
       style={{ width, height, ...style }}
       {...lp.handlers}
       onClick={lp.click(onClick)}

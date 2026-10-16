@@ -6,6 +6,10 @@ import type { GameState } from '../engine/types';
 export interface FlowSettings {
   /** UI-10：每個窗口都停 */
   stopAtEveryWindow: boolean;
+  /** UI-11b 結算動畫速度 (預設 normal；off = 一次顯示全部) */
+  animSpeed?: 'fast' | 'normal' | 'slow' | 'off';
+  /** UI-11a 階段開場視窗 (預設開) */
+  phaseIntro?: boolean;
 }
 
 export interface FlowMemory {

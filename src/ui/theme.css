@@ -140,7 +140,7 @@ button.primary { background: var(--gold); color: #111318; border: 0; font-weight
 /* 輪到你 */
 .turnbar { flex-shrink: 0; height: 52px; background: #1f232b; border: 1px solid var(--gold-dk); border-radius: 10px; padding: 6px 12px; display: flex; align-items: center; gap: 14px; }
 .tb-title { font-family: var(--serif); font-size: 18px; color: var(--gold); font-weight: 700; flex-shrink: 0; }
-.tb-prompt { font-family: var(--serif); font-size: 15px; font-weight: 700; max-width: 260px; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
+.tb-prompt { font-family: var(--serif); font-size: 15px; font-weight: 700; max-width: 520px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
 .tb-preview { flex: 1; min-width: 0; display: flex; gap: 6px; justify-content: center; align-items: center; overflow: hidden; }
 .tb-buttons { display: flex; gap: 6px; flex-shrink: 1; min-width: 0; overflow-x: auto; }
 .tb-buttons button { height: 36px; }
@@ -238,3 +238,60 @@ button.primary { background: var(--gold); color: #111318; border: 0; font-weight
 
 /* 長按放大：不要觸發瀏覽器的文字選取與長按選單 */
 .card, .mat { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+
+/* UI-11 回合流程彈出視窗 */
+.ov-bg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); z-index: 45; }
+.ov-bg.dim { background: rgba(0, 0, 0, 0.55); }
+.ov-box { background: #1f232b; border: 1px solid var(--gold); border-radius: 14px; padding: 22px 26px; box-shadow: 0 12px 50px rgba(0, 0, 0, 0.75); display: flex; flex-direction: column; gap: 12px; animation: ov-in 0.18s ease-out; }
+@keyframes ov-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+.ov-box > button.primary { align-self: flex-end; min-width: 96px; }
+
+.intro { width: 560px; align-items: center; text-align: center; cursor: pointer; }
+.intro-round { color: var(--muted); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+.intro-title { font-family: var(--serif); font-size: 40px; font-weight: 700; color: var(--gold); display: flex; align-items: center; gap: 14px; white-space: nowrap; }
+.intro-no { display: inline-flex; width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--gold); align-items: center; justify-content: center; font-size: 24px; }
+.intro-lines { font-size: 16px; line-height: 1.7; }
+.intro-stats { display: flex; gap: 10px; justify-content: center; }
+.intro > button.primary { align-self: center; }
+
+.resolve { width: 720px; max-height: 760px; }
+.resolve-head { display: flex; justify-content: space-between; align-items: center; }
+.resolve-list { overflow-y: auto; max-height: 620px; display: flex; flex-direction: column; gap: 12px; padding-right: 6px; }
+.resolve-title { font-family: var(--serif); font-weight: 700; color: var(--gold); font-size: 15px; border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-bottom: 4px; }
+.resolve-line { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-size: 14px; animation: line-in 0.2s ease-out; }
+@keyframes line-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+.resolve-line .card { box-shadow: none; }
+.resolve-line.important { color: var(--gold); font-weight: 700; }
+.resolve-dot { width: 30px; flex-shrink: 0; text-align: center; color: var(--muted); }
+.resolve-dot::before { content: '·'; }
+.resolve-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.resolve-line .rule { flex-shrink: 0; font-size: 11px; color: var(--muted); }
+
+.decision { min-width: 520px; max-width: 1000px; }
+.dec-head { display: flex; align-items: center; gap: 10px; }
+.dec-prompt { flex: 1; min-width: 0; font-family: var(--serif); font-weight: 700; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dec-head .rule { font-size: 11px; color: var(--muted); }
+button.ghost { background: transparent; border-color: var(--line2); color: var(--muted); }
+.dec-note { color: var(--muted); font-size: 13px; }
+.dec-body { display: flex; gap: 16px; }
+.center-row { align-items: center; justify-content: center; }
+.col { display: flex; flex-direction: column; }
+.gap8 { gap: 8px; }
+.stepper.big button { width: 40px; height: 40px; font-size: 18px; }
+.warn { color: var(--down); font-weight: 700; }
+.dec-cards { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; padding: 6px 0; }
+.dec-cardopt { display: flex; flex-direction: column; align-items: center; gap: 4px; max-width: 140px; text-align: center; }
+.dec-cardopt.off { opacity: 0.45; }
+.ordered { position: relative; }
+.order-no { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px; border-radius: 50%; background: var(--gold); color: #111318; font-weight: 700; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.dec-options { display: flex; flex-direction: column; gap: 6px; }
+.dec-options button { text-align: left; height: auto; min-height: 36px; padding: 6px 12px; display: flex; align-items: center; gap: 8px; }
+.dec-options .why { margin-left: auto; font-size: 11px; color: var(--muted); }
+.dec-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+
+.tb-phase { flex-shrink: 0; padding: 3px 10px; border-radius: 6px; background: #2a2618; border: 1px solid var(--gold-dk); color: var(--gold); font-weight: 700; font-size: 13px; white-space: nowrap; }
+
+/* UI-11d 可以用效果的卡片 */
+.card.effect { outline: 2px solid #7fd1a0; outline-offset: 2px; animation: glow 1.6s ease-in-out infinite; }
+@keyframes glow { 0%, 100% { box-shadow: 0 0 6px rgba(127, 209, 160, 0.45); } 50% { box-shadow: 0 0 16px rgba(127, 209, 160, 0.95); } }
+.skill.clickable { animation: glow 1.6s ease-in-out infinite; }

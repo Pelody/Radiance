@@ -1,6 +1,5 @@
-// 成長畫面 (DG-14)、設定、重要事件 (UI-03)、遊戲結束。
+// 成長畫面 (DG-14)、設定、遊戲結束。重要事件改由結算視窗顯示 (UI-11b)。
 import { useState } from 'react';
-import type { LogEntry } from '../engine/types';
 import { abilitySpace, abilityTrackLength, characterSpace, characterTrackLength } from '../engine/tracks';
 import { abilityGrowthStatus, characterGrowthStatus } from '../engine/window';
 import { useUI } from './ctx';
@@ -95,6 +94,18 @@ export function SettingsModal({
         <input type="checkbox" checked={settings.stopAtEveryWindow} onChange={(e) => setSettings({ ...settings, stopAtEveryWindow: e.target.checked })} />
         每個行動窗口都停 (UI-10)
       </label>
+      <label className="row gap10" style={{ marginTop: 10 }}>
+        <input type="checkbox" checked={settings.phaseIntro !== false} onChange={(e) => setSettings({ ...settings, phaseIntro: e.target.checked })} />
+        階段開場視窗 (UI-11a)
+      </label>
+      <div className="row gap10" style={{ marginTop: 10 }}>
+        結算動畫 (UI-11b)
+        {(['fast', 'normal', 'slow', 'off'] as const).map((k) => (
+          <button key={k} className={(settings.animSpeed ?? 'normal') === k ? 'primary' : ''} onClick={() => setSettings({ ...settings, animSpeed: k })}>
+            {{ fast: '快', normal: '普通', slow: '慢', off: '不播放' }[k]}
+          </button>
+        ))}
+      </div>
       <div className="row gap10" style={{ marginTop: 16 }}>
         {sure ? (
           <>
@@ -109,25 +120,6 @@ export function SettingsModal({
         )}
       </div>
     </Modal>
-  );
-}
-
-/** UI-03 重要事件停下來讓玩家看清楚 */
-export function EventsOverlay({ events, onClose }: { events: LogEntry[]; onClose: () => void }) {
-  return (
-    <div className="events">
-      <div className="events-box">
-        {events.slice(-8).map((e, i) => (
-          <div key={i} className="ev">
-            <span className="rule">{e.rule}</span>
-            {e.text}
-          </div>
-        ))}
-        <button className="primary" onClick={onClose} autoFocus>
-          繼續
-        </button>
-      </div>
-    </div>
   );
 }
 
