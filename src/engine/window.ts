@@ -5,15 +5,18 @@ import { InvalidAnswer } from './core';
 import { cardName, playerCard } from './data';
 import {
   activeEffects,
+  applyMods,
   defsForSkill,
+  flag,
   isMandatory,
   skillActive,
+  skillUnlocked,
   type EffectDef,
   type Source,
   type SourcedDef,
 } from './effects';
 import { face, lightCost } from './calc';
-import { addPath, emit, roundLimit, runEffect, spendLight, spendXP, usedThisRound } from './ops';
+import { addPath, emit, gainXP, roundLimit, runEffect, spendLight, spendXP, usedThisRound } from './ops';
 import { abilitySpace, abilityTrackLength, characterSpace, characterTrackLength } from './tracks';
 import type { GameState, Phase, SkillState } from './types';
 
@@ -50,7 +53,7 @@ function skillOptions(ctx: Ctx, phase: Phase): ActiveOpt[] {
   const s = ctx.s;
   const out: ActiveOpt[] = [];
   for (const sk of s.player.skills) {
-    if (!sk.unlocked) continue;
+    if (!skillUnlocked(s, sk)) continue;
     for (const def of defsForSkill(sk.name)) {
       if (!def.active) continue;
       const src: Source = { id: `skill:${sk.name}`, kind: 'skill', name: sk.name };
@@ -259,11 +262,32 @@ export function* boundaryWindow(ctx: Ctx, phase: Phase, which: 'start' | 'end'):
 
 // ---------------------------------------------------------------- 成長 (KC-05 ~ KC-08)
 
+/** 成長費用 (KC-05 + 效果：Two Steps Back、At All Costs、Spark、Equilibrium+) */
+export function growthCost(s: GameState, track: 'ability' | 'character', base: number): { cost: number; bonusXP: number } {
+  let cost = Math.max(0, applyMods(s, { stat: 'growthCost', track }, base));
+  let bonusXP = 0;
+  for (const d of s.roundState.growthDiscounts) {
+    if (d.track !== 'any' && d.track !== track) continue;
+    if (d.kind === 'setTo') cost = Math.min(cost, d.value);
+    else {
+      const r = cost - d.value;
+      if (r < 0 && d.excessToXP) bonusXP += Math.min(-r, d.excessToXP);
+      cost = Math.max(0, r);
+    }
+  }
+  return { cost, bonusXP };
+}
+
+/** 能用來付成長費用的 XP (Calculated Risk+：每個信標當 3 XP) */
+export function growthBudget(s: GameState): number {
+  return s.player.xp + (flag(s, 'beaconsAsXP') ? 3 * s.player.beacons.length : 0);
+}
+
 export function abilityGrowthStatus(s: GameState): { ok: boolean; cost: number; reason?: string } {
   const pos = s.player.abilityGrowthPos;
   if (pos >= abilityTrackLength(s)) return { ok: false, cost: 0, reason: '已到最後一格' };
-  const cost = abilitySpace(s, pos + 1).cost ?? 0;
-  if (s.player.xp < cost) return { ok: false, cost, reason: `需要 ${cost} XP` };
+  const { cost } = growthCost(s, 'ability', abilitySpace(s, pos + 1).cost ?? 0);
+  if (growthBudget(s) < cost) return { ok: false, cost, reason: `需要 ${cost} XP` };
   return { ok: true, cost };
 }
 
@@ -271,10 +295,33 @@ export function characterGrowthStatus(s: GameState): { ok: boolean; cost: number
   const pos = s.player.characterGrowthPos;
   if (pos >= characterTrackLength(s)) return { ok: false, cost: 0, reason: '已到最後一格' };
   const sp = characterSpace(s, pos + 1);
-  const cost = sp.cost ?? 0;
-  if (s.player.xp < cost) return { ok: false, cost, reason: `需要 ${cost} XP` };
+  const { cost } = growthCost(s, 'character', sp.cost ?? 0);
+  if (growthBudget(s) < cost) return { ok: false, cost, reason: `需要 ${cost} XP` };
   if (sp.perm_booster && !affordablePermBoosters(s).length) return { ok: false, cost, reason: '沒有付得起的永久加成卡 (KC-08)' };
   return { ok: true, cost };
+}
+
+/** 付成長費用：可用信標代替 XP (Calculated Risk+)；用掉本回合的折扣，多出的折扣換 XP (At All Costs+) */
+function* payGrowth(ctx: Ctx, track: 'ability' | 'character', base: number, why: string): Gen {
+  const s = ctx.s;
+  const { cost, bonusXP } = growthCost(s, track, base);
+  let xpPart = cost;
+  if (flag(s, 'beaconsAsXP') && s.player.beacons.length && cost > 0) {
+    const minB = Math.max(0, Math.ceil((cost - s.player.xp) / 3));
+    const maxB = Math.min(s.player.beacons.length, Math.ceil(cost / 3));
+    const k = yield* ctx.chooseNumber('KC-05', `用幾個信標代替 XP (每個 3 XP)？`, minB, maxB);
+    for (let i = 0; i < k; i++) {
+      const b = s.player.beacons.pop()!;
+      s.world.locationDiscard.push(b);
+      ctx.log('KC-05', `花信標 ${cardName(b)} 當 3 XP`);
+      yield* emit(ctx, { t: 'BeaconSpent', location: b });
+    }
+    xpPart = Math.max(0, cost - 3 * k);
+  }
+  yield* spendXP(ctx, xpPart, 'KC-05', why);
+  s.roundState.growthDiscounts = s.roundState.growthDiscounts.filter((d) => d.track !== 'any' && d.track !== track);
+  s.roundState.flags.grown = (s.roundState.flags.grown ?? 0) + 1;
+  if (bonusXP) yield* gainXP(ctx, bonusXP, 'KC-05', '多出的成長折扣');
 }
 
 function growthOptions(ctx: Ctx): ActiveOpt[] {
@@ -305,7 +352,7 @@ function* growAbility(ctx: Ctx): Gen {
   const s = ctx.s;
   const st = abilityGrowthStatus(s);
   if (!st.ok) throw new InvalidAnswer(st.reason ?? '不能成長');
-  yield* spendXP(ctx, st.cost, 'KC-05', 'Ability Growth');
+  yield* payGrowth(ctx, 'ability', abilitySpace(s, s.player.abilityGrowthPos + 1).cost ?? 0, 'Ability Growth');
   s.player.abilityGrowthPos++;
   const sp = abilitySpace(s, s.player.abilityGrowthPos);
   ctx.log('KC-07', `Ability Growth → 第 ${s.player.abilityGrowthPos} 格`);
@@ -319,7 +366,7 @@ function* growCharacter(ctx: Ctx): Gen {
   const s = ctx.s;
   const st = characterGrowthStatus(s);
   if (!st.ok) throw new InvalidAnswer(st.reason ?? '不能成長');
-  yield* spendXP(ctx, st.cost, 'KC-05', 'Character Growth');
+  yield* payGrowth(ctx, 'character', characterSpace(s, s.player.characterGrowthPos + 1).cost ?? 0, 'Character Growth');
   s.player.characterGrowthPos++;
   const sp = characterSpace(s, s.player.characterGrowthPos);
   ctx.log('KC-08', `Character Growth → 第 ${s.player.characterGrowthPos} 格`);
