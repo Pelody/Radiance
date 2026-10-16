@@ -65,43 +65,62 @@ export interface ZoomTarget {
 }
 export const ZoomContext = createContext<(z: ZoomTarget | null) => void>(() => {});
 
-/** 長按多久開始放大 (毫秒) */
+/** 長按多久開始放大 (毫秒，觸控用) */
 export const LONG_PRESS_MS = 400;
+/** 滑鼠停留多久開始放大 (毫秒) */
+export const HOVER_MS = 300;
 
 export const CARD_W = 101;
 
 /**
- * UI-04 放大：長按才放大 (Paul 要求)；單點照常操作，長按後放開不算點擊。
- * 卡片與技能墊共用。
+ * UI-04 放大：滑鼠移上去停留一下就放大，移開就關 (Paul 要求，1.6.3；原本是長按)。
+ * 觸控螢幕沒有滑鼠，仍然用長按；長按後放開不算點擊。卡片與技能墊共用。
  */
 export function useLongPressZoom(id: string) {
   const setZoom = useContext(ZoomContext);
   const timer = useRef<number | null>(null);
   const zoomed = useRef(false);
-  const stop = () => {
+  const touchZoomed = useRef(false);
+  const clear = () => {
     if (timer.current !== null) window.clearTimeout(timer.current);
     timer.current = null;
+  };
+  const stop = () => {
+    clear();
     if (zoomed.current) setZoom(null);
+    zoomed.current = false;
+  };
+  const start = (e: React.PointerEvent<HTMLElement>, ms: number) => {
+    clear();
+    const rect = e.currentTarget.getBoundingClientRect();
+    timer.current = window.setTimeout(() => {
+      zoomed.current = true;
+      setZoom({ id, rect });
+    }, ms);
   };
   return {
     handlers: {
-      onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
-        zoomed.current = false;
-        const rect = e.currentTarget.getBoundingClientRect();
-        timer.current = window.setTimeout(() => {
-          zoomed.current = true;
-          setZoom({ id, rect });
-        }, LONG_PRESS_MS);
+      onPointerEnter: (e: React.PointerEvent<HTMLElement>) => {
+        if (e.pointerType === 'mouse') start(e, HOVER_MS);
       },
-      onPointerUp: stop,
+      onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+        if (e.pointerType === 'mouse') return;
+        touchZoomed.current = false;
+        start(e, LONG_PRESS_MS);
+      },
+      onPointerUp: (e: React.PointerEvent<HTMLElement>) => {
+        if (e.pointerType === 'mouse') return;
+        touchZoomed.current = zoomed.current;
+        stop();
+      },
       onPointerLeave: stop,
       onPointerCancel: stop,
       onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
     },
-    /** 包住點擊：剛長按放大過就不執行 */
+    /** 包住點擊：觸控剛長按放大過就不執行 */
     click: (f?: () => void) => () => {
-      if (zoomed.current) {
-        zoomed.current = false;
+      if (touchZoomed.current) {
+        touchZoomed.current = false;
         return;
       }
       f?.();

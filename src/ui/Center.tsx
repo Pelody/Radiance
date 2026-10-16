@@ -4,7 +4,12 @@ import { cardName, skillMat } from '../engine/data';
 import { skillUsable } from '../engine/effects';
 import type { SkillState } from '../engine/types';
 import { useUI, windowOption } from './ctx';
-import { Badge, Card, Icon, Panel, Slot, Stat, useLongPressZoom } from './parts';
+import type { CSSProperties } from 'react';
+import { Badge, CARD_W, Card, Icon, Panel, Slot, Stat, useLongPressZoom } from './parts';
+
+/** 任務區、玩家區放敵人卡的寬度 (超過就重疊，UI-05d) */
+const QUEST_W = 730;
+const PLAYER_W = 900;
 
 // ---------------------------------------------------------------- 任務區
 
@@ -29,15 +34,23 @@ export function QuestArea() {
         </div>
         <div className="cards-row">
           {w.questArea.length === 0 && <span className="muted small empty">沒有敵人</span>}
-          {w.questArea.map((id) => (
-            <EnemyCard key={id} id={id} engage={willEngage.has(id)} />
+          {w.questArea.map((id, i) => (
+            <EnemyCard key={id} id={id} engage={willEngage.has(id)} style={{ marginLeft: fanMargin(i, w.questArea.length, QUEST_W) }} />
           ))}
         </div>
       </div>
       <div className="vsep" />
       <div className="treachery">
-        <div className="panel-title" style={{ marginBottom: 8 }}>
-          Treachery
+        <div className="treachery-head">
+          <span className="panel-title">Treachery</span>
+          {/* 已完成的 Treachery 放在標題列，不讓 Quest Area 變高而擠到手牌 (UI-05c) */}
+          {w.completedTreacheries.length > 0 && (
+            <span className="legacies">
+              {w.completedTreacheries.map((id) => (
+                <Card key={id} id={id} w={22} title={`${cardName(id)} legacy`} />
+              ))}
+            </span>
+          )}
         </div>
         {t ? <Card id={t} w={101} /> : <Slot label="Treachery" w={141} h={101} />}
         <div className="stat tprog" title="Treachery Progress / PV">
@@ -50,19 +63,33 @@ export function QuestArea() {
             <div style={{ width: `${pv ? Math.min(100, (100 * w.treacheryProgress) / pv) : 0}%` }} />
           </div>
         </div>
-        {w.completedTreacheries.length > 0 && (
-          <div className="legacies">
-            {w.completedTreacheries.map((id) => (
-              <Card key={id} id={id} w={34} title={`${cardName(id)} legacy`} />
-            ))}
-          </div>
-        )}
       </div>
     </section>
   );
 }
 
-function EnemyCard({ id, engage, onClick, selected, dim }: { id: string; engage?: boolean; onClick?: () => void; selected?: boolean; dim?: boolean }) {
+/** 卡片排不下時重疊排列 (UI-05d)：回傳第 i 張的 marginLeft；放得下時照原本 10px 間隔 */
+function fanMargin(i: number, n: number, avail: number, w = CARD_W, gap = 10): number | undefined {
+  if (i === 0 || n * w + (n - 1) * gap <= avail) return undefined;
+  const step = (avail - w) / (n - 1);
+  return step - w - gap;
+}
+
+function EnemyCard({
+  id,
+  engage,
+  onClick,
+  selected,
+  dim,
+  style,
+}: {
+  id: string;
+  engage?: boolean;
+  onClick?: () => void;
+  selected?: boolean;
+  dim?: boolean;
+  style?: CSSProperties;
+}) {
   const { s } = useUI();
   const e = s.world.enemies[id];
   const disarmed = s.roundState.disarmed.includes(id);
@@ -72,6 +99,7 @@ function EnemyCard({ id, engage, onClick, selected, dim }: { id: string; engage?
       onClick={onClick}
       selected={selected || engage}
       dim={dim}
+      style={style}
       title={`${cardName(id)}：攻擊 ${enemyAttack(s, id)} ${enemyTypes(s, id).join('/')}`}
       badges={
         <>
@@ -102,12 +130,21 @@ export function PlayerArea() {
     <section className="player-area">
       <span className="panel-title abs">Player Area</span>
       {ids.length === 0 && <span className="muted small">沒有接戰的敵人</span>}
-      {ids.map((id) => {
+      {ids.map((id, i) => {
         const a = opt(`assign:${id}`);
         const atk = opt(`attacker:${id}`);
         const click = a ? () => setAssign(id) : atk ? () => submit({ option: atk.id }) : undefined;
         const attacked = s.roundState.attackedThisPhase.includes(id) && s.phase === 'attack';
-        return <EnemyCard key={id} id={id} onClick={click} selected={assign === id || (!!click && d?.type === 'window')} dim={attacked} />;
+        return (
+          <EnemyCard
+            key={id}
+            id={id}
+            onClick={click}
+            selected={assign === id || (!!click && d?.type === 'window')}
+            dim={attacked}
+            style={{ marginLeft: fanMargin(i, ids.length + s.world.envyLocations.length, PLAYER_W) }}
+          />
+        );
       })}
       {s.world.envyLocations.map((l) => (
         <div key={l.id} className="revealed" title="Envy：玩家區的地點 (可以分配 EP)">
@@ -173,7 +210,7 @@ function Mat({ name }: { name: string }) {
   const mat = skillMat(name);
   const look = preview?.complete ? preview.state : s;
   const skills = s.player.skills.filter((k) => k.mat === mat.mat_type);
-  const lp = useLongPressZoom(mat.id); // 長按墊子 (含技能) 放大看技能文字
+  const lp = useLongPressZoom(mat.id); // 滑鼠停在墊子上 (含技能) 放大看技能文字
   return (
     <div className="mat" style={{ width: MAT_W, height: MAT_H }} {...lp.handlers}>
       <img src={`cards/${mat.id}.webp`} alt={name} draggable={false} />

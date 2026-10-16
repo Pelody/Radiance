@@ -105,7 +105,7 @@ export function App() {
   );
 }
 
-/** UI-04 長按放大：一律顯示在畫面正中間 (Paul 要求) */
+/** UI-04 放大 (滑鼠停留／觸控長按)：一律顯示在畫面正中間 (Paul 要求) */
 function Zoom({ z }: { z: ZoomTarget; scale: number }) {
   const c = getCard(z.id);
   const big = c.type === 'skill_mat' ? { w: 1010, h: 636 } : c.rotated ? { w: 448, h: 320 } : { w: 320, h: 448 };
