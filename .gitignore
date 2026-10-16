@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+# 規則書與 PnP PDF 只在本機查證／切圖用，不進版控 (檔案大、且為原始出版品)
+reference/*.pdf

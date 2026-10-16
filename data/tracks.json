@@ -1,0 +1,918 @@
+{
+ "_meta": {
+  "source": "PnP 9Up-NoBleed-A4.pdf p.59 (normal), p.60 (hard), p.45/46 (Shade influence)",
+  "status": "已逐格對照 PnP 9Up-NoBleed-A4.pdf 原圖核對 (2026-10-16)：腐化墊、成長墊、Shade 影響墊、任務板，普通與困難兩面全部相符。光軌道 8–10 與 11 都是接戰 3：實體墊上 0–10 與 11–20 分兩列印，所以分成兩段，不是漏判圖示。",
+  "rules": "RULES.md 第 9 節 D-01 ~ D-05"
+ },
+ "growth": {
+  "normal": {
+   "ability": {
+    "start": {
+     "unlock": 1
+    },
+    "spaces": [
+     {
+      "cost": 2,
+      "unlock": 2
+     },
+     {
+      "cost": 2,
+      "recruit": 1,
+      "upgrade": 1
+     },
+     {
+      "cost": 3,
+      "unlock": 2
+     },
+     {
+      "cost": 3,
+      "recruit": 1,
+      "upgrade": 1
+     },
+     {
+      "cost": 4,
+      "unlock": 2
+     },
+     {
+      "cost": 5,
+      "recruit": 1,
+      "upgrade": 2
+     },
+     {
+      "cost": 6,
+      "unlock": 2
+     },
+     {
+      "cost": 7,
+      "recruit": 1,
+      "upgrade": 2
+     },
+     {
+      "cost": 9,
+      "unlock": 3
+     },
+     {
+      "cost": 10,
+      "recruit": 2,
+      "upgrade": 2
+     }
+    ]
+   },
+   "character": {
+    "start": {
+     "light": 4,
+     "hand_size": 6,
+     "rest": 2
+    },
+    "spaces": [
+     {
+      "cost": 3,
+      "light": 5
+     },
+     {
+      "cost": 4,
+      "perm_booster": 1
+     },
+     {
+      "cost": 5,
+      "light": 6
+     },
+     {
+      "cost": 5,
+      "hand_size": 7,
+      "rest": 3
+     },
+     {
+      "cost": 6,
+      "light": 7
+     },
+     {
+      "cost": 6,
+      "rest": 4,
+      "perm_booster": 1
+     },
+     {
+      "cost": 7,
+      "light": 9
+     },
+     {
+      "cost": 8,
+      "hand_size": 8,
+      "rest": 5
+     },
+     {
+      "cost": 9,
+      "light": 10
+     },
+     {
+      "cost": 10,
+      "light": 12,
+      "perm_booster": 1
+     }
+    ]
+   },
+   "light_track": {
+    "min": 0,
+    "max": 20,
+    "engagement": [
+     {
+      "spaces": [
+       0
+      ],
+      "engage": 6,
+      "reveal": [
+       "Dusk",
+       "Doom"
+      ],
+      "wounds": 0
+     },
+     {
+      "spaces": [
+       1,
+       2,
+       3
+      ],
+      "engage": 5,
+      "reveal": [
+       "Doom"
+      ],
+      "wounds": 0
+     },
+     {
+      "spaces": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "engage": 4,
+      "reveal": [
+       "Dusk"
+      ],
+      "wounds": 0
+     },
+     {
+      "spaces": [
+       8,
+       9,
+       10
+      ],
+      "engage": 3,
+      "reveal": [],
+      "wounds": 0
+     },
+     {
+      "spaces": [
+       11
+      ],
+      "engage": 3,
+      "reveal": [],
+      "wounds": 0
+     },
+     {
+      "spaces": [
+       12,
+       13,
+       14,
+       15
+      ],
+      "engage": 2,
+      "reveal": [],
+      "wounds": 0
+     },
+     {
+      "spaces": [
+       16,
+       17,
+       18,
+       19,
+       20
+      ],
+      "engage": 1,
+      "reveal": [],
+      "wounds": 0
+     }
+    ]
+   }
+  },
+  "hard": {
+   "ability": {
+    "start": {
+     "unlock": 1
+    },
+    "spaces": [
+     {
+      "cost": 3,
+      "unlock": 2
+     },
+     {
+      "cost": 4,
+      "recruit": 1,
+      "upgrade": 1
+     },
+     {
+      "cost": 4,
+      "unlock": 2
+     },
+     {
+      "cost": 5,
+      "recruit": 1,
+      "upgrade": 1
+     },
+     {
+      "cost": 5,
+      "unlock": 2
+     },
+     {
+      "cost": 6,
+      "recruit": 1,
+      "upgrade": 2
+     },
+     {
+      "cost": 6,
+      "unlock": 2
+     },
+     {
+      "cost": 7,
+      "recruit": 1,
+      "upgrade": 2
+     },
+     {
+      "cost": 9,
+      "unlock": 3
+     },
+     {
+      "cost": 11,
+      "recruit": 2,
+      "upgrade": 2
+     }
+    ]
+   },
+   "character": {
+    "start": {
+     "light": 4,
+     "hand_size": 6,
+     "rest": 2
+    },
+    "spaces": [
+     {
+      "cost": 4,
+      "light": 5
+     },
+     {
+      "cost": 5,
+      "perm_booster": 1
+     },
+     {
+      "cost": 6,
+      "light": 6
+     },
+     {
+      "cost": 7,
+      "hand_size": 7,
+      "rest": 3
+     },
+     {
+      "cost": 7,
+      "light": 7
+     },
+     {
+      "cost": 8,
+      "rest": 4,
+      "perm_booster": 1
+     },
+     {
+      "cost": 8,
+      "light": 8
+     },
+     {
+      "cost": 9,
+      "hand_size": 8
+     },
+     {
+      "cost": 10,
+      "light": 10
+     },
+     {
+      "cost": 11,
+      "light": 12,
+      "perm_booster": 1
+     }
+    ]
+   },
+   "light_track": {
+    "min": 0,
+    "max": 20,
+    "engagement": [
+     {
+      "spaces": [
+       0,
+       1
+      ],
+      "engage": 7,
+      "reveal": [
+       "Dusk",
+       "Doom"
+      ],
+      "wounds": 4
+     },
+     {
+      "spaces": [
+       2,
+       3
+      ],
+      "engage": 6,
+      "reveal": [
+       "Dusk",
+       "Doom"
+      ],
+      "wounds": 2
+     },
+     {
+      "spaces": [
+       4,
+       5,
+       6
+      ],
+      "engage": 5,
+      "reveal": [
+       "Doom"
+      ],
+      "wounds": 2
+     },
+     {
+      "spaces": [
+       7,
+       8,
+       9
+      ],
+      "engage": 4,
+      "reveal": [
+       "Dusk"
+      ],
+      "wounds": 1
+     },
+     {
+      "spaces": [
+       10
+      ],
+      "engage": 3,
+      "reveal": [],
+      "wounds": 0
+     },
+     {
+      "spaces": [
+       11,
+       12
+      ],
+      "engage": 3,
+      "reveal": [],
+      "wounds": 0
+     },
+     {
+      "spaces": [
+       13,
+       14,
+       15
+      ],
+      "engage": 2,
+      "reveal": [],
+      "wounds": 0
+     },
+     {
+      "spaces": [
+       16,
+       17,
+       18,
+       19,
+       20
+      ],
+      "engage": 1,
+      "reveal": [],
+      "wounds": 0
+     }
+    ]
+   }
+  }
+ },
+ "corruption": {
+  "normal": {
+   "corruption_track": {
+    "min": 1,
+    "max": 20
+   },
+   "distance_track": {
+    "_note": "距離軌道的格子是方塊下方的『框』，不是腐化軌道的數字。box 0 為起點(無推進)。重設時方塊放到腐化值對應的框 (start_box_by_corruption)。",
+    "start_box_by_corruption": {
+     "1": 0,
+     "2": 1,
+     "3": 1,
+     "4": 1,
+     "5": 2,
+     "6": 2,
+     "7": 3,
+     "8": 3,
+     "9": 4,
+     "10": 4,
+     "11": 5,
+     "12": 5,
+     "13": 6,
+     "14": 6,
+     "15": 7,
+     "16": 7,
+     "17": 8,
+     "18": 8,
+     "19": 9,
+     "20": 9
+    },
+    "boxes": [
+     {
+      "box": 0,
+      "under_corruption": [
+       1
+      ],
+      "threat": 0,
+      "resistance": 0
+     },
+     {
+      "box": 1,
+      "under_corruption": [
+       2,
+       3,
+       4
+      ],
+      "threat": 0,
+      "resistance": 1
+     },
+     {
+      "box": 2,
+      "under_corruption": [
+       5,
+       6
+      ],
+      "threat": 1,
+      "resistance": 1
+     },
+     {
+      "box": 3,
+      "under_corruption": [
+       7,
+       8
+      ],
+      "threat": 1,
+      "resistance": 2
+     },
+     {
+      "box": 4,
+      "under_corruption": [
+       9,
+       10
+      ],
+      "threat": 2,
+      "resistance": 3
+     },
+     {
+      "box": 5,
+      "under_corruption": [
+       11,
+       12
+      ],
+      "threat": 3,
+      "resistance": 5
+     },
+     {
+      "box": 6,
+      "under_corruption": [
+       13,
+       14
+      ],
+      "threat": 5,
+      "resistance": 6
+     },
+     {
+      "box": 7,
+      "under_corruption": [
+       15,
+       16
+      ],
+      "threat": 6,
+      "resistance": 7
+     },
+     {
+      "box": 8,
+      "under_corruption": [
+       17,
+       18
+      ],
+      "threat": 8,
+      "resistance": 10
+     },
+     {
+      "box": 9,
+      "under_corruption": [
+       19,
+       20
+      ],
+      "threat": 12,
+      "resistance": 14
+     }
+    ],
+    "max_box": 9,
+    "overflow_threat_tokens_per_distance": 2
+   },
+   "threat_track": {
+    "min": 0,
+    "max": 27,
+    "value": {
+     "0": 3,
+     "1": 3,
+     "2": 3,
+     "3": 4,
+     "4": 4,
+     "5": 4,
+     "6": 5,
+     "7": 5,
+     "8": 5,
+     "9": 5,
+     "10": 6,
+     "11": 6,
+     "12": 6,
+     "13": 7,
+     "14": 7,
+     "15": 7,
+     "16": 8,
+     "17": 8,
+     "18": 8,
+     "19": 9,
+     "20": 9,
+     "21": 9,
+     "22": 10,
+     "23": 10,
+     "24": 10,
+     "25": 11,
+     "26": 11,
+     "27": 12
+    }
+   },
+   "resistance_track": {
+    "min": 0,
+    "max": 27,
+    "value": {
+     "0": 0,
+     "1": 0,
+     "2": 0,
+     "3": 1,
+     "4": 1,
+     "5": 1,
+     "6": 2,
+     "7": 2,
+     "8": 2,
+     "9": 3,
+     "10": 3,
+     "11": 3,
+     "12": 4,
+     "13": 4,
+     "14": 4,
+     "15": 4,
+     "16": 5,
+     "17": 5,
+     "18": 5,
+     "19": 5,
+     "20": 6,
+     "21": 6,
+     "22": 6,
+     "23": 7,
+     "24": 7,
+     "25": 7,
+     "26": 8,
+     "27": 8
+    }
+   }
+  },
+  "hard": {
+   "corruption_track": {
+    "min": 1,
+    "max": 19
+   },
+   "distance_track": {
+    "_note": "距離軌道的格子是方塊下方的『框』，不是腐化軌道的數字。box 0 為起點(無推進)。重設時方塊放到腐化值對應的框 (start_box_by_corruption)。",
+    "start_box_by_corruption": {
+     "1": 0,
+     "2": 1,
+     "3": 1,
+     "4": 2,
+     "5": 2,
+     "6": 3,
+     "7": 3,
+     "8": 4,
+     "9": 4,
+     "10": 5,
+     "11": 5,
+     "12": 6,
+     "13": 6,
+     "14": 7,
+     "15": 7,
+     "16": 8,
+     "17": 8,
+     "18": 9,
+     "19": 9
+    },
+    "boxes": [
+     {
+      "box": 0,
+      "under_corruption": [
+       1
+      ],
+      "threat": 0,
+      "resistance": 0
+     },
+     {
+      "box": 1,
+      "under_corruption": [
+       2,
+       3
+      ],
+      "threat": 0,
+      "resistance": 1
+     },
+     {
+      "box": 2,
+      "under_corruption": [
+       4,
+       5
+      ],
+      "threat": 1,
+      "resistance": 1
+     },
+     {
+      "box": 3,
+      "under_corruption": [
+       6,
+       7
+      ],
+      "threat": 1,
+      "resistance": 2
+     },
+     {
+      "box": 4,
+      "under_corruption": [
+       8,
+       9
+      ],
+      "threat": 2,
+      "resistance": 3
+     },
+     {
+      "box": 5,
+      "under_corruption": [
+       10,
+       11
+      ],
+      "threat": 3,
+      "resistance": 5
+     },
+     {
+      "box": 6,
+      "under_corruption": [
+       12,
+       13
+      ],
+      "threat": 5,
+      "resistance": 6
+     },
+     {
+      "box": 7,
+      "under_corruption": [
+       14,
+       15
+      ],
+      "threat": 6,
+      "resistance": 7
+     },
+     {
+      "box": 8,
+      "under_corruption": [
+       16,
+       17
+      ],
+      "threat": 8,
+      "resistance": 10
+     },
+     {
+      "box": 9,
+      "under_corruption": [
+       18,
+       19
+      ],
+      "threat": 12,
+      "resistance": 14
+     }
+    ],
+    "max_box": 9,
+    "overflow_threat_tokens_per_distance": 3
+   },
+   "threat_track": {
+    "min": 0,
+    "max": 27,
+    "value": {
+     "0": 3,
+     "1": 4,
+     "2": 4,
+     "3": 4,
+     "4": 5,
+     "5": 5,
+     "6": 5,
+     "7": 6,
+     "8": 6,
+     "9": 6,
+     "10": 6,
+     "11": 7,
+     "12": 7,
+     "13": 7,
+     "14": 7,
+     "15": 8,
+     "16": 8,
+     "17": 8,
+     "18": 8,
+     "19": 9,
+     "20": 9,
+     "21": 9,
+     "22": 10,
+     "23": 10,
+     "24": 10,
+     "25": 11,
+     "26": 11,
+     "27": 12
+    }
+   },
+   "resistance_track": {
+    "min": 0,
+    "max": 27,
+    "value": {
+     "0": 1,
+     "1": 1,
+     "2": 1,
+     "3": 2,
+     "4": 2,
+     "5": 2,
+     "6": 3,
+     "7": 3,
+     "8": 3,
+     "9": 4,
+     "10": 4,
+     "11": 4,
+     "12": 5,
+     "13": 5,
+     "14": 5,
+     "15": 5,
+     "16": 6,
+     "17": 6,
+     "18": 6,
+     "19": 6,
+     "20": 7,
+     "21": 7,
+     "22": 7,
+     "23": 9,
+     "24": 9,
+     "25": 9,
+     "26": 11,
+     "27": 11
+    }
+   }
+  }
+ },
+ "shade_influence": {
+  "normal": {
+   "spaces": [
+    {
+     "label": "start"
+    },
+    {
+     "label": "10",
+     "threat": 12
+    },
+    {
+     "label": "9",
+     "threat": 7
+    },
+    {
+     "label": "8",
+     "threat": 3
+    },
+    {
+     "label": "7"
+    },
+    {
+     "label": "6"
+    },
+    {
+     "label": "5"
+    },
+    {
+     "label": "4",
+     "xp": 2
+    },
+    {
+     "label": "3",
+     "xp": 3
+    },
+    {
+     "label": "2",
+     "xp": 4
+    },
+    {
+     "label": "1",
+     "xp": 5
+    },
+    {
+     "label": "0",
+     "xp": 6
+    }
+   ]
+  },
+  "hard": {
+   "spaces": [
+    {
+     "label": "start"
+    },
+    {
+     "label": "10",
+     "threat": 17
+    },
+    {
+     "label": "9",
+     "threat": 11
+    },
+    {
+     "label": "8",
+     "threat": 6
+    },
+    {
+     "label": "7",
+     "threat": 3
+    },
+    {
+     "label": "6",
+     "threat": 1
+    },
+    {
+     "label": "5"
+    },
+    {
+     "label": "4"
+    },
+    {
+     "label": "3",
+     "xp": 2
+    },
+    {
+     "label": "2",
+     "xp": 3
+    },
+    {
+     "label": "1",
+     "xp": 4
+    },
+    {
+     "label": "0",
+     "xp": 5
+    }
+   ]
+  }
+ },
+ "quest_board": {
+  "_note": "支線任務模組。方塊從 0 開始；前進到第 i 格需支付 cost[i-1] 的 XP 或 EP 其中一種 (擇一)。共 5 格 = 最多接 5 個任務。來源：PnP p.45/46。",
+  "normal": {
+   "ep": [
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "xp": [
+    4,
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  "hard": {
+   "ep": [
+    3,
+    5,
+    7,
+    8,
+    9
+   ],
+   "xp": [
+    4,
+    5,
+    6,
+    8,
+    10
+   ]
+  }
+ }
+}

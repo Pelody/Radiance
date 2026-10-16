@@ -1,0 +1,13 @@
+/* 色票取自 design/main-screen.html */
+:root {
+  --bg: #111318;
+  --panel: #161920;
+  --line: #2c303b;
+  --text: #ede7d8;
+  --muted: #a8a291;
+  --gold: #e3b65c;
+}
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font-family: 'Noto Sans TC', system-ui, sans-serif; font-size: 14px; white-space: nowrap; }
+.icon { display: inline-block; width: 1em; height: 1em; background: currentColor;
+  -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }

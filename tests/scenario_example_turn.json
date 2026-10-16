@@ -1,0 +1,621 @@
+{
+ "id": "example_turn_guide_v1_2",
+ "title": "官方 Example Turn Guide v1.2：第 1 回合完整流程 + 第 2 回合 Staging",
+ "source": "Radiance - Example Turn Guide v1.2.pdf",
+ "how_to_use": "依 setup 建立固定狀態 (不洗牌)，依序執行 steps 中的玩家決策 (decisions)，每個 step 結束後比對 expect。cards 以 name 對應 data/cards.json (玩家卡皆為 basic 面)。expect 只列出該步驟會改變或需要確認的欄位。",
+ "deviations_from_guide": [
+  "Guide v1.2 使用較舊的卡片文字。目前卡片 Moltan Spellcaster 的效果是『End of Explore Phase：移除地點 2 Progress 或受 1 傷』，Guide 中是 When Revealed。因此該次傷害改在 P5 結束時發生，總傷害數不變。",
+  "目前的 Sol 地點有『每個 Refresh Phase 加 1 Path』，Guide 沒有提到。本測試依目前卡片，P8 後 Sol 有 1 Path。",
+  "Guide 的夥伴 Scorchwright 不在目前的 PnP 中 (夥伴已改名)，且夥伴規則屬於 RULES.md 第 2 部分。本測試不帶夥伴，Defend Phase 改用手牌 Equal Measure 防禦，所以多 1 個傷害、少抽 1 張牌的差異來自這裡。",
+  "Guide 文字寫 Sol 座標 (1,5)，但卡片與 Greed 卡都寫 Sol (5,1)。距離計算結果相同 (4)。",
+  "Guide 指示忽略 Greed 的 Setup 與 Special (不能在探索 2 個地點前前往最終地點)，見 config。",
+  "P8 產光：17 + 4 = 21，超過上限 20，依 OPEN-08 夾在 20。Guide 圖示的方塊也停在 20。"
+ ],
+ "config": {
+  "difficulty": "Blaze",
+  "companions": [],
+  "ignore_shade_setup": true,
+  "ignore_shade_special": true,
+  "shuffle": false,
+  "open_defaults": "RULES.md 第 14 節的預設值"
+ },
+ "setup": {
+  "luminary": "Justice",
+  "profession": "Wayfarer",
+  "skills": [
+   {
+    "name": "Shout",
+    "element": "Earth",
+    "unlocked": true
+   },
+   {
+    "name": "Grit",
+    "element": "Fire",
+    "unlocked": false
+   },
+   {
+    "name": "Call Your Shot",
+    "element": "Earth",
+    "unlocked": false
+   },
+   {
+    "name": "Find Weakness",
+    "element": "Wind",
+    "unlocked": false
+   },
+   {
+    "name": "Use the Pain",
+    "element": "Wind",
+    "unlocked": false
+   },
+   {
+    "name": "Secret Ways",
+    "element": "Wind",
+    "unlocked": false
+   },
+   {
+    "name": "Familiar Places",
+    "element": "Fire",
+    "unlocked": false
+   },
+   {
+    "name": "Choose Wisely",
+    "element": "Earth",
+    "unlocked": false
+   },
+   {
+    "name": "Infiltrate",
+    "element": "Wind",
+    "unlocked": false
+   },
+   {
+    "name": "Field Advantage",
+    "element": "Earth",
+    "unlocked": false
+   },
+   {
+    "name": "All-Terrain",
+    "element": "Fire",
+    "unlocked": false
+   },
+   {
+    "name": "In the Wind",
+    "element": "Fire",
+    "unlocked": false
+   }
+  ],
+  "deck_top_to_bottom": [
+   "Ember Strike",
+   "Foresight",
+   "Equal Measure",
+   "Hasten",
+   "Fortitude",
+   "Useful Rage",
+   "Light the Path",
+   "Momentum Shift",
+   "Frenzy",
+   "Ever Onward",
+   "Step Lightly",
+   "Cold Roar"
+  ],
+  "draw_7_then_choose_explore": "Foresight",
+  "hobby_profession": "Hunter",
+  "perm_booster_source_profession": "Mender",
+  "dusk_deck_top_to_bottom": [
+   "Garadeth Grunt",
+   "Terragard Watchman",
+   "Moltan Spy",
+   "Sol Conspirator",
+   "Moltan Spellcaster",
+   "Green Wraith",
+   "Thretin Marshals"
+  ],
+  "doom_deck_top_to_bottom": [
+   "Thretin Torchwielder",
+   "Waking Wraith",
+   "Cursed Banneret"
+  ],
+  "active_treachery": "Hidden Pitfalls",
+  "shade": "Greed",
+  "active_location": "Farhome",
+  "location_deck_top_to_bottom": [
+   "Flaming Headwaters",
+   "Wrath Marshes",
+   "Wilderforth",
+   "Ruins of Crowbridge",
+   "Sol"
+  ],
+  "player_xp": 0
+ },
+ "expect_after_setup": {
+  "rules": [
+   "SU-05",
+   "SU-09",
+   "SU-10",
+   "SU-13"
+  ],
+  "hand": [
+   "Ember Strike",
+   "Equal Measure",
+   "Hasten",
+   "Fortitude",
+   "Useful Rage",
+   "Light the Path"
+  ],
+  "explore_slot": "Foresight",
+  "light": 20,
+  "corruption": 1,
+  "threat_pos": 0,
+  "resistance_pos": 0,
+  "distance_box": 0,
+  "quest_left_to_right": [
+   "Terragard Watchman",
+   "Garadeth Grunt"
+  ],
+  "note": "Grunt (2) 先放；Watchman (2, Slow) 放左邊；累計黑暗 4 ≥ 3 停止。",
+  "luminary_hp": 11,
+  "beacon_limit": 3,
+  "hand_size": 6,
+  "light_production": 4,
+  "rest": 2,
+  "shade_influence_pos": 0
+ },
+ "steps": [
+  {
+   "round": 1,
+   "phase": "P1 Staging",
+   "rules": [
+    "P1-01",
+    "P1-02",
+    "KC-12f",
+    "KC-30 Reveal"
+   ],
+   "decisions": [
+    {
+     "when": "Moltan Spy When Revealed",
+     "choice": "add X Progress to treachery",
+     "note": "X = Disruptor 敵人數 = 1。地點沒有 Progress，『移除』選項無法結算，引擎應強制選擇加到 Treachery (KC-12f)。"
+    }
+   ],
+   "expect": {
+    "threat": 3,
+    "revealed_in_order": [
+     "Moltan Spy",
+     "Sol Conspirator",
+     "Moltan Spellcaster"
+    ],
+    "quest_left_to_right": [
+     "Terragard Watchman",
+     "Garadeth Grunt",
+     "Moltan Spy",
+     "Sol Conspirator",
+     "Moltan Spellcaster"
+    ],
+    "treachery_progress": 1,
+    "dusk_deck_top_to_bottom": [
+     "Green Wraith",
+     "Thretin Marshals"
+    ]
+   }
+  },
+  {
+   "round": 1,
+   "phase": "P2 Action Set",
+   "rules": [
+    "P2-01",
+    "P2-03",
+    "KC-11"
+   ],
+   "decisions": [
+    {
+     "action": "Ember Strike",
+     "attack": "Useful Rage",
+     "booster": "Hasten"
+    },
+    {
+     "use": "Farhome location effect: spend 1 free Light (light +1)"
+    }
+   ],
+   "expect": {
+    "light_after_paying": 16,
+    "light": 17,
+    "active_element": "Earth",
+    "attack_type": "Physical",
+    "hand": [
+     "Equal Measure",
+     "Fortitude",
+     "Light the Path"
+    ]
+   }
+  },
+  {
+   "round": 1,
+   "phase": "P3 Engagement",
+   "rules": [
+    "P3-01",
+    "P3-02",
+    "KC-18",
+    "KC-03"
+   ],
+   "decisions": [
+    {
+     "use_skill": "Shout",
+     "note": "Earth 方塊 = 加成卡元素 → 啟動；已解鎖、Ready。效果：Pull 1 Slow 敵人 → 唯一選項 Terragard Watchman。"
+    }
+   ],
+   "expect": {
+    "engage_count": 1,
+    "player_left_to_right": [
+     "Terragard Watchman",
+     "Moltan Spellcaster"
+    ],
+    "quest_left_to_right": [
+     "Garadeth Grunt",
+     "Moltan Spy",
+     "Sol Conspirator"
+    ],
+    "skill_Shout": {
+     "uses_this_round": 1,
+     "exhausted": false
+    }
+   }
+  },
+  {
+   "round": 1,
+   "phase": "P4 Darkness",
+   "rules": [
+    "P4-01",
+    "P4-02",
+    "P4-03"
+   ],
+   "decisions": [
+    {
+     "discard_beacons": 0
+    },
+    {
+     "cover": 2
+    }
+   ],
+   "expect": {
+    "EP": 6,
+    "quest_darkness": 4,
+    "treachery_progress": 3,
+    "treachery_completed": false,
+    "explore_EP": 4
+   }
+  },
+  {
+   "round": 1,
+   "phase": "P5 Explore + Travel",
+   "rules": [
+    "P5-01",
+    "P5-02",
+    "P5-04",
+    "T1c",
+    "T2a",
+    "T2b",
+    "T3a",
+    "T3b",
+    "T3c",
+    "T3d",
+    "T4",
+    "KC-12f"
+   ],
+   "decisions": [
+    {
+     "travel_method": "seek"
+    },
+    {
+     "revealed": "Flaming Headwaters",
+     "choice": "save_beacon"
+    },
+    {
+     "revealed": "Wrath Marshes",
+     "choice": "save_beacon"
+    },
+    {
+     "revealed": "Wilderforth",
+     "choice": "save_beacon"
+    },
+    {
+     "revealed": "Ruins of Crowbridge",
+     "choice": "defer",
+     "note": "信標已滿 (3)，引擎不應提供 save_beacon 選項"
+    },
+    {
+     "revealed": "Sol",
+     "choice": "travel"
+    },
+    {
+     "when": "Moltan Spellcaster End of Explore Phase",
+     "choice": "take 1 Wound",
+     "note": "Sol 沒有 Progress，引擎應強制選擇受傷 (KC-12f)"
+    }
+   ],
+   "expect": {
+    "location_progress_before_travel": 4,
+    "EV": 4,
+    "explored": true,
+    "xp": 1,
+    "fetch_allowed": false,
+    "fetch_reason": "Farhome 座標和 = 2 < 6",
+    "distance": 5,
+    "distance_breakdown": {
+     "geographic": 4,
+     "obstacles": 0,
+     "paths": 0,
+     "deferred": 1
+    },
+    "threat_pos": 3,
+    "resistance_pos": 5,
+    "distance_box": 0,
+    "active_location": "Sol",
+    "new_location_token_on_location": true,
+    "beacon_mat_ready": true,
+    "beacons": [
+     "Flaming Headwaters",
+     "Wrath Marshes",
+     "Wilderforth"
+    ],
+    "location_discard": [
+     "Farhome"
+    ],
+    "location_deck_top_to_bottom": [
+     "Ruins of Crowbridge"
+    ],
+    "shade_influence_pos": 1,
+    "shade_reveal_pending": true,
+    "wounds": 1
+   }
+  },
+  {
+   "round": 1,
+   "phase": "P6 Attack",
+   "rules": [
+    "P6-01",
+    "P6-02",
+    "P6-03",
+    "KC-24",
+    "KC-12"
+   ],
+   "decisions": [
+    {
+     "use": "Ember Strike option: deal yourself 2 Wound → +4 MainAttack"
+    },
+    {
+     "assign_AP": 4,
+     "to": "Terragard Watchman"
+    },
+    {
+     "assign_AP": 6,
+     "to": "Moltan Spellcaster"
+    },
+    {
+     "when": "Shout trigger (defeated Fast enemy)",
+     "pull_fast": "Sol Conspirator"
+    },
+    {
+     "assign_AP": 4,
+     "to": "Sol Conspirator"
+    },
+    {
+     "when": "Shout trigger (defeated Fast enemy)",
+     "pull_fast": "Moltan Spy",
+     "note": "Shout 的 pull 沒有 may，是強制的"
+    }
+   ],
+   "expect": {
+    "wounds_after_ember_strike": 3,
+    "AP": 14,
+    "attack_type": "Physical",
+    "results": [
+     {
+      "enemy": "Terragard Watchman",
+      "blocked": 0,
+      "wounds": 4,
+      "defeated": true,
+      "xp_gain": 2,
+      "shout_trigger": false
+     },
+     {
+      "enemy": "Moltan Spellcaster",
+      "blocked": 2,
+      "wounds": 4,
+      "defeated": true,
+      "xp_gain": 2,
+      "shout_trigger": true
+     },
+     {
+      "enemy": "Sol Conspirator",
+      "blocked": 2,
+      "wounds": 2,
+      "defeated": true,
+      "xp_gain": 1,
+      "shout_trigger": true
+     }
+    ],
+    "AP_left": 0,
+    "xp": 6,
+    "player_left_to_right": [
+     "Moltan Spy"
+    ],
+    "quest_left_to_right": [
+     "Garadeth Grunt"
+    ],
+    "treachery_progress": 3,
+    "note_end_of_attack": "Sol Conspirator 已被擊敗，其 End of Attack 效果不觸發"
+   }
+  },
+  {
+   "round": 1,
+   "phase": "P7 Defend",
+   "rules": [
+    "P7-01",
+    "P7-02",
+    "P7-03",
+    "KC-11"
+   ],
+   "decisions": [
+    {
+     "enemy": "Moltan Spy",
+     "defend_with_hand": [
+      "Equal Measure"
+     ],
+     "note": "Spy 為 Photonic 攻擊 2；Fortitude (Physical) 不可用來防禦"
+    }
+   ],
+   "expect": {
+    "incoming": 2,
+    "blocked": 1,
+    "wounds": 4,
+    "discard_top": "Equal Measure",
+    "no_prompt": "Useful Rage 的 End of Defend 效果在攻擊卡上，不可使用 (KC-11)"
+   }
+  },
+  {
+   "round": 1,
+   "phase": "P8 Refresh",
+   "rules": [
+    "P8-01",
+    "P8-02",
+    "P8-04",
+    "P8-05",
+    "OPEN-08"
+   ],
+   "decisions": [
+    {
+     "rest": "none"
+    },
+    {
+     "discard_order": [
+      "Foresight",
+      "Hasten",
+      "Ember Strike"
+     ]
+    },
+    {
+     "extra_discard_from_hand": []
+    }
+   ],
+   "expect": {
+    "new_location_token_on_location": false,
+    "location_threat_tokens": 0,
+    "light": 20,
+    "Sol_paths": 1,
+    "explore_slot": "Useful Rage",
+    "discard_bottom_to_top": [
+     "Equal Measure",
+     "Foresight",
+     "Hasten",
+     "Ember Strike"
+    ],
+    "echo": "Ember Strike",
+    "hand": [
+     "Fortitude",
+     "Light the Path",
+     "Momentum Shift",
+     "Frenzy",
+     "Ever Onward",
+     "Step Lightly"
+    ],
+    "deck_top_to_bottom": [
+     "Cold Roar"
+    ],
+    "corruption": 1,
+    "game_over": false
+   }
+  },
+  {
+   "round": 2,
+   "phase": "P1 Staging (Shade 揭示回合)",
+   "rules": [
+    "P1-01",
+    "P1-02",
+    "P1-03",
+    "SH-02",
+    "SH-03",
+    "SH-04",
+    "KC-12a",
+    "P1-03 (Shade 在 Staging 完成後進場)"
+   ],
+   "decisions": [],
+   "expect": {
+    "threat": 16,
+    "threat_breakdown": {
+     "track": 4,
+     "location_tokens": 0,
+     "shade_influence": 12
+    },
+    "revealed_in_order": [
+     {
+      "name": "Thretin Torchwielder",
+      "deck": "Doom",
+      "remaining_after": 12,
+      "note": "When Revealed 條件 (腐化 ≥ 4) 不成立"
+     },
+     {
+      "name": "Waking Wraith",
+      "deck": "Doom",
+      "remaining_after": 8
+     },
+     {
+      "name": "Cursed Banneret",
+      "deck": "Doom",
+      "remaining_after": 4
+     },
+     {
+      "name": "Green Wraith",
+      "deck": "Dusk",
+      "remaining_after": 2,
+      "note": "剩餘 < 5 改翻 Dusk"
+     },
+     {
+      "name": "Thretin Marshals",
+      "deck": "Dusk",
+      "remaining_after": 0
+     }
+    ],
+    "quest_before_shade": [
+     "Green Wraith",
+     "Cursed Banneret",
+     "Waking Wraith",
+     "Thretin Torchwielder",
+     "Garadeth Grunt",
+     "Thretin Marshals"
+    ],
+    "dusk_deck_empty": true,
+    "doom_deck_empty": true,
+    "shade": {
+     "name": "Greed",
+     "revealed": true,
+     "placed": "left (Slow)",
+     "when_revealed": "任務區黑暗 (不含 Greed) = 18 ≥ 6，不需翻牌"
+    },
+    "quest_after_shade_reveal": [
+     "Greed",
+     "Green Wraith",
+     "Cursed Banneret",
+     "Waking Wraith",
+     "Thretin Torchwielder",
+     "Garadeth Grunt",
+     "Thretin Marshals"
+    ],
+    "after_staging": {
+     "player_left_to_right": [
+      "Moltan Spy"
+     ],
+     "quest_left_to_right": [
+      "Greed",
+      "Green Wraith",
+      "Cursed Banneret",
+      "Waking Wraith",
+      "Thretin Torchwielder",
+      "Garadeth Grunt",
+      "Thretin Marshals"
+     ],
+     "note": "Sol 的「Staging 結束時任務區 Sol 敵人接戰」在 Greed 進場之前就結算了 (當時任務區沒有 Sol 敵人)，所以 Greed 留在任務區。與 Guide p.18 的圖一致。"
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+﻿卡片ID,名稱,欄位,目前值,說明,核對結果
+-,成長軌道墊 (Growth Mat) 兩面,data/tracks.json,,已由 Claude 從 PnP 圖片判讀，請對照實體墊確認。特別確認：困難面角色成長第 8 格只有手牌 8、沒有休息值,已對照 PnP 原圖確認無誤 (2026-10-16)
+-,腐化軌道墊 (Corruption Mat) 兩面,data/tracks.json,,已由 Claude 從 PnP 圖片判讀，請對照實體墊確認。,已對照 PnP 原圖確認無誤 (2026-10-16)
+-,Shade 影響墊兩面,data/tracks.json,,已由 Claude 從 PnP 圖片判讀，請對照實體墊確認。,已對照 PnP 原圖確認無誤 (2026-10-16)
+-,任務板兩面,data/tracks.json,,已由 Claude 從 PnP 圖片判讀，請對照實體墊確認。,已對照 PnP 原圖確認無誤 (2026-10-16)
+p33r2c1,Greed,attack_defense_type,Both,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)
+p35r0c1,Wrath,attack_defense_type,Both,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)
+p35r0c2,Greedling,attack_defense_type,Both,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)
+p35r1c0,Covetous Flail,attack_defense_type,Photonic,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)
+p35r1c1,Vanity Wisps,attack_defense_type,Physical,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)
+p35r1c2,Ravager,attack_defense_type,Both,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)
+p55r0c0,Hunter,special_rules,*An enemy is tracked while it has at least as much {Progress} as its {Darkness}.,人工判讀的值 (MANUAL_OVERRIDES)，請對照實體卡確認,已對照 PnP 原圖確認無誤 (2026-10-16)

@@ -1,0 +1,368 @@
+<!doctype html>
+<!-- Radiance 主畫面設計稿 (Paul 確認版)。靜態示意：第 1 回合 Action Set，官方 Example Turn Guide 的狀態。版面規則見 spec/20-ui.md。 -->
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>Radiance 主畫面</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&amp;family=Noto+Serif+TC:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#111318}
+a{color:#e3b65c}a:hover{color:#f3d08a}
+section[aria-label="日誌"] > div > span:last-child{overflow:hidden;text-overflow:ellipsis;min-width:0}
+</style>
+</helmet>
+<div style="width: 1600px; height: 1000px; box-sizing: border-box; white-space: nowrap; background: #111318; color: #ede7d8; font-family: 'Noto Sans TC', sans-serif; font-size: 14px; display: flex; flex-direction: column">
+
+<!-- 上方：回合與階段列 -->
+<header style="height: 48px; flex-shrink: 0; box-sizing: border-box; padding: 0 10px; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #2c303b; background: #161920">
+<div style="display: flex; align-items: baseline; gap: 12px; width: 300px">
+<span style="font-family: 'Noto Serif TC', serif; font-size: 22px; font-weight: 700; letter-spacing: 1px; color: #e3b65c">Radiance</span>
+<span style="color: #a8a291">Round 1</span>
+</div>
+<nav aria-label="Phases" style="flex: 1; display: flex; gap: 6px; align-items: center">
+<span style="padding: 5px 10px; border-radius: 6px; color: #a8a291; background: #1f232b; font-size: 13px">1 Staging ✓</span>
+<span style="padding: 5px 12px; border-radius: 6px; color: #111318; background: #e3b65c; font-size: 13px; font-weight: 700">2 Action Set</span>
+<span style="padding: 5px 10px; border-radius: 6px; color: #a8a291; border: 1px solid #2c303b; font-size: 13px">3 Engagement</span>
+<span style="padding: 5px 10px; border-radius: 6px; color: #a8a291; border: 1px solid #2c303b; font-size: 13px">4 Darkness</span>
+<span style="padding: 5px 10px; border-radius: 6px; color: #a8a291; border: 1px solid #2c303b; font-size: 13px">5 Explore</span>
+<span style="padding: 5px 10px; border-radius: 6px; color: #a8a291; border: 1px solid #2c303b; font-size: 13px">6 Attack</span>
+<span style="padding: 5px 10px; border-radius: 6px; color: #a8a291; border: 1px solid #2c303b; font-size: 13px">7 Defend</span>
+<span style="padding: 5px 10px; border-radius: 6px; color: #a8a291; border: 1px solid #2c303b; font-size: 13px">8 Refresh</span>
+</nav>
+<div style="display: flex; gap: 8px">
+<button style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #3a3f4c; background: #1f232b; color: #ede7d8; font: inherit; font-size: 13px">↶ 復原</button>
+<button style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #3a3f4c; background: #1f232b; color: #ede7d8; font: inherit; font-size: 13px">Growth</button>
+<button style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #3a3f4c; background: #1f232b; color: #ede7d8; font: inherit; font-size: 13px">設定</button>
+</div>
+</header>
+
+<div style="flex: 1; min-height: 0; box-sizing: border-box; padding: 10px; display: flex; gap: 10px">
+
+<!-- ===== 左：世界 ===== -->
+<aside aria-label="世界" style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; min-height: 0">
+
+<section style="background: #1a1d24; border: 1px solid #2c303b; border-radius: 10px; padding: 10px 12px 12px">
+<div style="font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 15px; margin-bottom: 8px">世界</div>
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<img src="assets/cards/farhome.jpg" alt="Farhome (Active Location)" style="width: 101px; height: 141px; border-radius: 6px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.5)">
+<div style="flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+<div title="Progress" style="display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Progress.svg" alt="Progress" style="width: 16px; height: 16px; display: block"><b style="font-size: 15px">0<span style="font-size: 11px; color: #a8a291; font-weight: 400">/4</span></b></div>
+<div title="Coordinates" style="display: flex; align-items: center; padding: 5px 7px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><b style="font-size: 14px">(1, 1)</b></div>
+<div title="Obstacle" style="display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Obstacle.svg" alt="Obstacle" style="width: 16px; height: 16px; display: block"><b style="font-size: 15px">0</b></div>
+<div title="Path" style="display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Path.svg" alt="Path" style="width: 16px; height: 16px; display: block"><b style="font-size: 15px">0</b></div>
+<div title="Threat token" style="display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/ThreatToken.svg" alt="Threat token" style="width: 16px; height: 16px; display: block"><b style="font-size: 15px">0</b></div>
+<div title="Farhome：1 free Light" style="display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 6px; background: #2a2618; border: 1px solid #8a6d33"><img src="assets/icons/Light.svg" alt="Light" style="width: 16px; height: 16px; display: block"><b style="font-size: 15px; color: #e3b65c">+1</b></div>
+<div style="grid-column: 1 / span 2; padding: 4px 7px; border-radius: 6px; background: #24362f; border: 1px solid #3f6b5e; font-size: 12px; color: #b9d6cc; text-align: center">New Location</div>
+</div>
+</div>
+<div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #2c303b; display: flex; align-items: center; gap: 6px">
+<div title="Beacons" style="display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Beacon.svg" alt="Beacons" style="width: 16px; height: 16px; display: block"><b style="font-size: 15px">0<span style="font-size: 11px; color: #a8a291; font-weight: 400">/3</span></b></div>
+<span style="width: 28px; height: 40px; box-sizing: border-box; border: 1px dashed #4a5060; border-radius: 4px"></span>
+<span style="width: 28px; height: 40px; box-sizing: border-box; border: 1px dashed #4a5060; border-radius: 4px"></span>
+<span style="width: 28px; height: 40px; box-sizing: border-box; border: 1px dashed #4a5060; border-radius: 4px"></span>
+<span style="margin-left: auto; font-size: 12px; padding: 4px 7px; border-radius: 6px; background: #2a2618; border: 1px solid #8a6d33; color: #e3b65c">Search</span>
+</div>
+</section>
+
+<section style="background: #1a1d24; border: 1px solid #2c303b; border-radius: 10px; padding: 10px 12px 12px; display: flex; gap: 12px">
+<div style="width: 134px; flex-shrink: 0">
+<div style="font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 15px; margin-bottom: 8px">地圖</div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: 20px; gap: 2px">
+<div style="border-radius: 2px; background: #e3b65c"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33; border: 2px solid #c98fd1; box-sizing: border-box"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div>
+<div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div>
+<div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33; border: 2px solid #c98fd1; box-sizing: border-box"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div>
+<div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div>
+<div style="border-radius: 2px; background: #262a33; border: 2px solid #c98fd1; box-sizing: border-box"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; background: #262a33"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div>
+<div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div><div style="border-radius: 2px; border: 1px dashed #3a3f4c; box-sizing: border-box"></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 3px; margin-top: 8px; font-size: 11px; color: #a8a291">
+<span><span style="color: #e3b65c">■</span> 目前位置</span>
+<span><span style="color: #8a6d33">■</span> 走過的地點</span>
+<span><span style="color: #c98fd1">□</span> Final Location 候選</span>
+<span>┆ 已移出</span>
+</div>
+</div>
+<div style="flex: 1; min-width: 0">
+<div style="font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 14px; margin-bottom: 8px">Shade Influence</div>
+<div style="display: grid; grid-template-columns: 24px minmax(0, 1fr); grid-template-rows: repeat(12, 18px); row-gap: 1px; font-size: 13px; line-height: 18px">
+<span style="grid-row: 1; grid-column: 1 / span 2; background: #4a3d1f; box-shadow: inset 0 0 0 1px #e3b65c; border-radius: 3px; padding-left: 4px">Start</span>
+<span style="grid-row: 2; grid-column: 1; color: #a8a291; padding-left: 4px">1</span><span style="grid-row: 2; grid-column: 2; display: flex; align-items: center; gap: 4px"><img src="assets/icons/ThreatTrack.svg" alt="Threat" style="width: 16px; height: 16px; display: block">+12</span>
+<span style="grid-row: 3; grid-column: 1; color: #a8a291; padding-left: 4px">2</span><span style="grid-row: 3; grid-column: 2; display: flex; align-items: center; gap: 4px"><img src="assets/icons/ThreatTrack.svg" alt="Threat" style="width: 16px; height: 16px; display: block">+7</span>
+<span style="grid-row: 4; grid-column: 1; color: #a8a291; padding-left: 4px">3</span><span style="grid-row: 4; grid-column: 2; display: flex; align-items: center; gap: 4px"><img src="assets/icons/ThreatTrack.svg" alt="Threat" style="width: 16px; height: 16px; display: block">+3</span>
+<span style="grid-row: 5; grid-column: 1; color: #a8a291; padding-left: 4px">4</span>
+<span style="grid-row: 6; grid-column: 1; color: #a8a291; padding-left: 4px">5</span>
+<span style="grid-row: 7; grid-column: 1; color: #a8a291; padding-left: 4px">6</span>
+<span style="grid-row: 8; grid-column: 1; color: #a8a291; padding-left: 4px">7</span><span style="grid-row: 8; grid-column: 2; display: flex; align-items: center; gap: 4px"><img src="assets/icons/XP.svg" alt="XP" style="width: 16px; height: 16px; display: block">+2</span>
+<span style="grid-row: 9; grid-column: 1; color: #a8a291; padding-left: 4px">8</span><span style="grid-row: 9; grid-column: 2; display: flex; align-items: center; gap: 4px"><img src="assets/icons/XP.svg" alt="XP" style="width: 16px; height: 16px; display: block">+3</span>
+<span style="grid-row: 10; grid-column: 1; color: #a8a291; padding-left: 4px">9</span><span style="grid-row: 10; grid-column: 2; display: flex; align-items: center; gap: 4px"><img src="assets/icons/XP.svg" alt="XP" style="width: 16px; height: 16px; display: block">+4</span>
+<span style="grid-row: 11; grid-column: 1; color: #a8a291; padding-left: 4px">10</span><span style="grid-row: 11; grid-column: 2; display: flex; align-items: center; gap: 4px"><img src="assets/icons/XP.svg" alt="XP" style="width: 16px; height: 16px; display: block">+5</span>
+<span style="grid-row: 12; grid-column: 1; color: #a8a291; padding-left: 4px">11</span><span style="grid-row: 12; grid-column: 2; display: flex; align-items: center; gap: 4px"><img src="assets/icons/XP.svg" alt="XP" style="width: 16px; height: 16px; display: block">+6</span>
+</div>
+</div>
+</section>
+
+<section aria-label="日誌" style="flex: 1; min-height: 0; background: #1a1d24; border: 1px solid #2c303b; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; font-size: 12px; overflow: hidden">
+<div style="font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 15px">日誌</div>
+<div style="display: flex; gap: 6px"><span style="color: #7fa8d9; width: 42px; flex-shrink: 0">P1-01</span><span>Threat 3 (track 3 + Threat token 0)</span></div>
+<div style="display: flex; gap: 6px"><span style="color: #7fa8d9; width: 42px; flex-shrink: 0">P1-02</span><span>Reveal Moltan Spy (Fast，放最前端)</span></div>
+<div style="display: flex; gap: 6px"><span style="color: #7fa8d9; width: 42px; flex-shrink: 0">KC-12f</span><span>Moltan Spy：Location 沒有 Progress 可移除，改為 Treachery +1 Progress</span></div>
+<div style="display: flex; gap: 6px"><span style="color: #7fa8d9; width: 42px; flex-shrink: 0">P1-02</span><span>Reveal Sol Conspirator (Fast)</span></div>
+<div style="display: flex; gap: 6px"><span style="color: #7fa8d9; width: 42px; flex-shrink: 0">P1-02</span><span>Reveal Moltan Spellcaster，Darkness 4 ≥ 3，停止</span></div>
+<div style="display: flex; gap: 6px"><span style="color: #7fa8d9; width: 42px; flex-shrink: 0">P2-01</span><span>Action Set：等你選卡</span></div>
+<div style="color: #a8a291; font-size: 11px; margin-top: auto">點規則編號可看白話說明</div>
+</section>
+</aside>
+
+<!-- ===== 中：敵人 + 玩家板 ===== -->
+<main style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+
+<!-- Quest Area + Treachery -->
+<section aria-label="Quest Area" style="flex-shrink: 0; background: #1a1d24; border: 1px solid #2c303b; border-radius: 10px; padding: 8px 14px 10px; display: flex; gap: 14px; align-items: flex-end">
+<div style="flex: 1; min-width: 0">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 15px">Quest Area</span>
+<div title="Darkness" style="display: flex; align-items: center; gap: 6px; padding: 3px 7px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Darkness.svg" alt="Darkness" style="width: 15px; height: 15px; display: block"><b style="font-size: 14px">8</b></div>
+</div>
+<span style="color: #a8a291; font-size: 12px">back ← · → front</span>
+</div>
+<div style="display: flex; gap: 10px; justify-content: center; align-items: flex-end">
+<img src="assets/cards/terragard.jpg" alt="Terragard Watchman" style="width: 101px; height: 141px; border-radius: 6px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.5)">
+<img src="assets/cards/grunt.jpg" alt="Garadeth Grunt" style="width: 101px; height: 141px; border-radius: 6px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.5)">
+<img src="assets/cards/spy.jpg" alt="Moltan Spy" style="width: 101px; height: 141px; border-radius: 6px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.5)">
+<img src="assets/cards/conspirator.jpg" alt="Sol Conspirator" style="width: 101px; height: 141px; border-radius: 6px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.5)">
+<div style="position: relative">
+<img src="assets/cards/spellcaster.jpg" alt="Moltan Spellcaster" style="width: 101px; height: 141px; border-radius: 6px; display: block; outline: 2px solid #e3b65c; outline-offset: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.5)">
+<span title="Engage" style="position: absolute; left: 50%; top: -9px; transform: translateX(-50%); width: 22px; height: 22px; border-radius: 11px; background: #e3b65c; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Engagement.svg" alt="Engage" style="width: 14px; height: 14px; display: block; filter: brightness(0.2)"></span>
+</div>
+</div>
+</div>
+<div style="width: 1px; align-self: stretch; background: #2c303b"></div>
+<div style="width: 141px; flex-shrink: 0">
+<div style="font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 15px; margin-bottom: 8px">Treachery</div>
+<img src="assets/cards/pitfalls.jpg" alt="Hidden Pitfalls" style="width: 141px; height: 101px; border-radius: 6px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.5)">
+<div title="Progress" style="display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 3px 7px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Progress.svg" alt="Progress" style="width: 15px; height: 15px; display: block"><b style="font-size: 14px">1<span style="font-size: 11px; color: #a8a291; font-weight: 400">/9</span></b><div style="flex: 1; height: 5px; background: #2c303b; border-radius: 3px"><div style="width: 11%; height: 5px; background: #c98fd1; border-radius: 3px"></div></div></div>
+</div>
+</section>
+
+<!-- Player Area -->
+<section aria-label="Player Area" style="height: 157px; flex-shrink: 0; box-sizing: border-box; border: 1px dashed #3a3f4c; border-radius: 10px; padding: 8px 14px; position: relative; display: flex; align-items: center; justify-content: center; gap: 10px">
+<span style="position: absolute; left: 14px; top: 8px; font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 15px">Player Area</span>
+<div style="width: 101px; height: 141px; box-sizing: border-box; border: 2px dashed #8a6d33; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 12px; color: #e3b65c; padding: 6px">Moltan Spellcaster</div>
+</section>
+
+<!-- 輪到你 -->
+<section aria-label="目前的決定" style="flex-shrink: 0; background: #1f232b; border: 1px solid #8a6d33; border-radius: 10px; padding: 6px 12px; display: flex; align-items: center; gap: 14px">
+<div style="flex-shrink: 0; display: flex; align-items: baseline; gap: 8px"><span style="font-family: 'Noto Serif TC', serif; font-size: 18px; color: #e3b65c; font-weight: 700">輪到你</span><span style="font-family: 'Noto Serif TC', serif; font-size: 15px; font-weight: 700">選 3 張卡</span></div>
+<div style="display: flex; gap: 6px; flex: 1; min-width: 0; justify-content: center">
+<div title="Light" style="display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Light.svg" alt="Light" style="width: 20px; height: 20px; display: block"><b style="font-size: 19px; color: #e88a73">16</b></div>
+<div title="Engagement" style="display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Engagement.svg" alt="Engagement" style="width: 20px; height: 20px; display: block"><b style="font-size: 19px">1</b></div>
+<div title="Attack (Physical)" style="display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Attack.svg" alt="Attack" style="width: 20px; height: 20px; display: block"><b style="font-size: 19px; color: #8fd17a">10</b><img src="assets/icons/Physical.svg" alt="Physical" style="width: 16px; height: 16px; display: block"></div>
+<div title="Explore" style="display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/MainExplore.svg" alt="Explore" style="width: 20px; height: 20px; display: block"><b style="font-size: 19px; color: #8fd17a">6</b></div>
+<div title="Element" style="display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Earth.svg" alt="Earth" style="width: 20px; height: 20px; display: block"><b style="font-size: 15px; color: #e3b65c">Shout</b></div>
+</div>
+<button style="height: 36px; padding: 0 10px; border-radius: 6px; border: 1px solid #8a6d33; background: transparent; color: #e3b65c; font: inherit; font-size: 13px; display: flex; align-items: center; gap: 5px"><img src="assets/icons/Light.svg" alt="" style="width: 14px; height: 14px; display: block">+1 Farhome</button>
+<button style="height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid #3a3f4c; background: transparent; color: #ede7d8; font: inherit">重選</button>
+<button style="height: 38px; padding: 0 22px; border-radius: 8px; border: 0; background: #e3b65c; color: #111318; font: inherit; font-weight: 700">確認</button>
+</section>
+
+<!-- 玩家板 -->
+<section aria-label="玩家板" style="width: 900px; flex-shrink: 0; align-self: center; display: flex; flex-direction: column">
+<div style="position: relative; height: 178px">
+<div style="position: absolute; left: 0; top: 0; width: 101px; height: 141px; box-sizing: border-box; border: 1px dashed #4a5060; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #8f897a">Action</div>
+<img src="assets/cards/ember.jpg" alt="Ember Strike (Action)" style="position: absolute; left: 0; top: 0; width: 101px; height: 141px; border-radius: 6px; display: block; outline: 2px solid #e3b65c; outline-offset: 2px">
+
+<div style="position: absolute; left: 111px; top: 0; width: 567px; height: 178px">
+<img src="assets/cards/board_jw.jpg" alt="Justice Luminary mat、Wayfarer Profession mat" style="position: absolute; left: 0; top: 0; width: 567px; height: 178px; border-radius: 4px; display: block">
+<div style="position: absolute; left: 104px; top: 0; width: 87px; height: 79px; box-sizing: border-box; border: 2px solid #e3b65c; border-radius: 3px; box-shadow: 0 0 8px rgba(227,182,92,0.7)"></div>
+<span style="position: absolute; left: 106px; top: 3px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Earth.svg" alt="Earth" style="width: 13px; height: 13px; display: block"></span>
+<span style="position: absolute; left: 152px; top: 62px; padding: 0 4px; border-radius: 6px; background: #e3b65c; color: #111318; font-size: 10px; font-weight: 700; line-height: 13px">Active</span>
+<div style="position: absolute; left: 104px; top: 79px; width: 87px; height: 72px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 106px; top: 82px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Fire.svg" alt="Fire" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 191px; top: 0; width: 93px; height: 53px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 193px; top: 3px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Earth.svg" alt="Earth" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 191px; top: 53px; width: 93px; height: 48px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 193px; top: 56px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Wind.svg" alt="Wind" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 191px; top: 101px; width: 93px; height: 49px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 193px; top: 104px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Wind.svg" alt="Wind" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 284px; top: 0; width: 93px; height: 53px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 286px; top: 3px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Wind.svg" alt="Wind" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 284px; top: 53px; width: 93px; height: 48px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 286px; top: 56px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Fire.svg" alt="Fire" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 284px; top: 101px; width: 93px; height: 49px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 286px; top: 104px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Earth.svg" alt="Earth" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 376px; top: 0; width: 93px; height: 53px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 378px; top: 3px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Wind.svg" alt="Wind" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 376px; top: 53px; width: 93px; height: 48px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 378px; top: 56px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Earth.svg" alt="Earth" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 376px; top: 101px; width: 93px; height: 49px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 378px; top: 104px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Fire.svg" alt="Fire" style="width: 13px; height: 13px; display: block"></span>
+<div style="position: absolute; left: 469px; top: 81px; width: 98px; height: 69px; background: rgba(17,19,24,0.45)"></div>
+<span style="position: absolute; left: 471px; top: 84px; width: 19px; height: 19px; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; justify-content: center"><img src="assets/icons/Fire.svg" alt="Fire" style="width: 13px; height: 13px; display: block"></span>
+</div>
+
+<div style="position: absolute; left: 688px; top: 0; width: 101px; height: 141px; box-sizing: border-box; border: 1px dashed #4a5060; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #8f897a">Booster</div>
+<img src="assets/cards/hasten.jpg" alt="Hasten (Booster)" style="position: absolute; left: 688px; top: 0; width: 101px; height: 141px; border-radius: 6px; display: block; outline: 2px solid #e3b65c; outline-offset: 2px">
+<div style="position: absolute; left: 799px; top: 0; width: 101px; height: 141px; box-sizing: border-box; border: 1px dashed #4a5060; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #8f897a">Companion</div>
+</div>
+
+<div style="position: relative; height: 157px; margin-top: 8px">
+<div style="position: absolute; left: 279px; top: 0; width: 101px; height: 141px; box-sizing: border-box; border: 1px dashed #4a5060; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #8f897a">Attack</div>
+<img src="assets/cards/rage.jpg" alt="Useful Rage (Attack)" style="position: absolute; left: 279px; top: 0; width: 101px; height: 141px; border-radius: 6px; display: block; outline: 2px solid #e3b65c; outline-offset: 2px">
+<div style="position: absolute; left: 409px; top: 0; width: 101px; height: 141px; box-sizing: border-box; border: 1px dashed #4a5060; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #8f897a">Explore</div>
+<img src="assets/cards/foresight.jpg" alt="Foresight (Explore)" style="position: absolute; left: 409px; top: 0; width: 101px; height: 141px; border-radius: 6px; display: block">
+<img src="assets/cards/doubleback.jpg" alt="Double Back (Hobby Market)" style="position: absolute; left: 688px; top: 0; width: 101px; height: 141px; border-radius: 6px; display: block">
+<img src="assets/cards/farsight.jpg" alt="Farsight (Hobby Market)" style="position: absolute; left: 799px; top: 0; width: 101px; height: 141px; border-radius: 6px; display: block">
+<span style="position: absolute; left: 688px; top: 143px; width: 212px; text-align: center; font-size: 12px; color: #c9a55a">Hobby Market · Hunter</span>
+</div>
+</section>
+
+<!-- Hand -->
+<section aria-label="Hand" style="position: relative; flex: 1; min-height: 0; display: flex; gap: 10px; align-items: flex-end; justify-content: center; overflow: hidden">
+<div title="Hand" style="position: absolute; left: 0; bottom: 0; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/HandSize.svg" alt="Hand" style="width: 16px; height: 16px; display: block"><b style="font-size: 15px">3</b></div>
+<img src="assets/cards/equal.jpg" alt="Equal Measure" style="width: 101px; height: 141px; border-radius: 6px; display: block">
+<img src="assets/cards/fortitude.jpg" alt="Fortitude" style="width: 101px; height: 141px; border-radius: 6px; display: block">
+<img src="assets/cards/lightpath.jpg" alt="Light the Path" style="width: 101px; height: 141px; border-radius: 6px; display: block">
+</section>
+</main>
+
+<!-- ===== 右：狀態與軌道 ===== -->
+<aside aria-label="狀態與軌道" style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px">
+
+<section style="background: #1a1d24; border: 1px solid #2c303b; border-radius: 10px; padding: 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+<div title="HP" style="display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/HP.svg" alt="HP" style="width: 17px; height: 17px; display: block"><b style="font-size: 16px">11</b></div>
+<div title="Wounds" style="display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Wound.svg" alt="Wounds" style="width: 17px; height: 17px; display: block"><b style="font-size: 16px">0</b></div>
+<div title="XP" style="display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/XP.svg" alt="XP" style="width: 17px; height: 17px; display: block"><b style="font-size: 16px">0</b></div>
+<div title="Character Growth 下一格費用" style="display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/CharacterGrowth.svg" alt="Character Growth" style="width: 17px; height: 17px; display: block"><b style="font-size: 16px">3</b></div>
+<div title="Ability Growth 下一格費用" style="display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/AbilityGrowth.svg" alt="Ability Growth" style="width: 17px; height: 17px; display: block"><b style="font-size: 16px">2</b></div>
+<div title="Hand Size" style="display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/HandSize.svg" alt="Hand Size" style="width: 17px; height: 17px; display: block"><b style="font-size: 16px">6</b></div>
+<div title="Light Production" style="display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Light.svg" alt="Light Production" style="width: 17px; height: 17px; display: block"><b style="font-size: 16px">+4</b></div>
+<div title="Rest" style="display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><img src="assets/icons/Rest.svg" alt="Rest" style="width: 17px; height: 17px; display: block"><b style="font-size: 16px">2</b></div>
+<div title="Treacheries 已完成" style="display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: #171a20; border: 1px solid #2c303b"><span style="font-size: 10px; color: #a8a291">Tr.</span><b style="font-size: 16px">0<span style="font-size: 11px; color: #a8a291; font-weight: 400">/3</span></b></div>
+</section>
+
+<section aria-label="軌道" style="flex: 1; min-height: 0; background: #1a1d24; border: 1px solid #2c303b; border-radius: 10px; padding: 10px; display: flex; flex-direction: column">
+<div style="display: flex; gap: 8px; align-items: flex-start; justify-content: center">
+
+<div style="width: 50px; flex-shrink: 0">
+<div title="Light" style="display: flex; align-items: center; justify-content: center; gap: 4px; height: 24px; margin-bottom: 8px"><img src="assets/icons/Light.svg" alt="Light" style="width: 16px; height: 16px; display: block"><b style="font-size: 17px; color: #e3b65c">20</b></div>
+<div style="height: 14px; display: flex; justify-content: center"><img src="assets/icons/Engagement.svg" alt="Engagement" style="width: 12px; height: 12px; display: block"></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(21, 28px); font-size: 14px; font-weight: 700">
+<span style="grid-row: 1 / span 5; background: #6b5526; box-shadow: inset 0 0 0 1px #e3b65c; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #f3d08a">1</span>
+<span style="grid-row: 6 / span 4; margin-top: 3px; background: #2f2a22; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">2</span>
+<span style="grid-row: 10; margin-top: 3px; background: #2f2a22; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">3</span>
+<span style="grid-row: 11 / span 3; margin-top: 3px; background: #2f2a22; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">3</span>
+<span style="grid-row: 14 / span 4; margin-top: 3px; background: #3a2421; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">4+</span>
+<span style="grid-row: 18 / span 3; margin-top: 3px; background: #44261f; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">5+</span>
+<span style="grid-row: 21; margin-top: 3px; background: #52281f; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">6+</span>
+</div>
+</div>
+
+<div style="width: 100px; flex-shrink: 0">
+<div title="Corruption" style="display: flex; align-items: center; justify-content: center; gap: 4px; height: 24px; margin-bottom: 8px"><img src="assets/icons/Corruption.svg" alt="Corruption" style="width: 16px; height: 16px; display: block"><b style="font-size: 17px">1<span style="font-size: 12px; color: #a8a291; font-weight: 400">/5</span></b></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr); column-gap: 3px; height: 14px; justify-items: center"><img src="assets/icons/ThreatTrack.svg" alt="Threat" style="width: 12px; height: 12px; display: block"><span></span><img src="assets/icons/ResistanceTrack.svg" alt="Resistance" style="width: 12px; height: 12px; display: block"></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr); grid-template-rows: repeat(20, 29.4px); column-gap: 3px; font-size: 12px; line-height: 29px">
+<span style="grid-row: 1; grid-column: 2; color: #111318; background: #e3b65c; border-radius: 3px; text-align: center; font-weight: 700">1</span>
+<span style="grid-row: 2; grid-column: 2; text-align: center; color: #c9c2b0">2</span>
+<span style="grid-row: 3; grid-column: 2; text-align: center; color: #c9c2b0">3</span>
+<span style="grid-row: 4; grid-column: 2; text-align: center; color: #c9c2b0">4</span>
+<span style="grid-row: 5; grid-column: 2; text-align: center; background: #8a3328; border-radius: 3px; font-weight: 700">5</span>
+<span style="grid-row: 6; grid-column: 2; text-align: center; color: #8f897a">6</span>
+<span style="grid-row: 7; grid-column: 2; text-align: center; color: #8f897a">7</span>
+<span style="grid-row: 8; grid-column: 2; text-align: center; color: #8f897a">8</span>
+<span style="grid-row: 9; grid-column: 2; text-align: center; color: #8f897a">9</span>
+<span style="grid-row: 10; grid-column: 2; text-align: center; color: #8f897a">10</span>
+<span style="grid-row: 11; grid-column: 2; text-align: center; color: #8f897a">11</span>
+<span style="grid-row: 12; grid-column: 2; text-align: center; color: #8f897a">12</span>
+<span style="grid-row: 13; grid-column: 2; text-align: center; color: #8f897a">13</span>
+<span style="grid-row: 14; grid-column: 2; text-align: center; color: #8f897a">14</span>
+<span style="grid-row: 15; grid-column: 2; text-align: center; color: #8f897a">15</span>
+<span style="grid-row: 16; grid-column: 2; text-align: center; color: #8f897a">16</span>
+<span style="grid-row: 17; grid-column: 2; text-align: center; color: #8f897a">17</span>
+<span style="grid-row: 18; grid-column: 2; text-align: center; color: #8f897a">18</span>
+<span style="grid-row: 19; grid-column: 2; text-align: center; color: #8f897a">19</span>
+<span style="grid-row: 20; grid-column: 2; text-align: center; color: #8f897a">20</span>
+<span style="grid-row: 1; grid-column: 1; box-sizing: border-box; border: 2px solid #e3b65c; border-radius: 4px; text-align: center; line-height: 25px; color: #a8a291">—</span>
+<span style="grid-row: 1; grid-column: 3; box-sizing: border-box; border: 2px solid #e3b65c; border-radius: 4px; text-align: center; line-height: 25px; color: #a8a291">—</span>
+<span style="grid-row: 2 / span 3; grid-column: 1; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+0</span>
+<span style="grid-row: 2 / span 3; grid-column: 3; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+1</span>
+<span style="grid-row: 5 / span 2; grid-column: 1; display: flex; align-items: center; justify-content: center; background: #1f232b; border-radius: 3px; margin-top: 1px">+1</span>
+<span style="grid-row: 5 / span 2; grid-column: 3; display: flex; align-items: center; justify-content: center; background: #1f232b; border-radius: 3px; margin-top: 1px">+1</span>
+<span style="grid-row: 7 / span 2; grid-column: 1; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+1</span>
+<span style="grid-row: 7 / span 2; grid-column: 3; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+2</span>
+<span style="grid-row: 9 / span 2; grid-column: 1; display: flex; align-items: center; justify-content: center; background: #1f232b; border-radius: 3px; margin-top: 1px">+2</span>
+<span style="grid-row: 9 / span 2; grid-column: 3; display: flex; align-items: center; justify-content: center; background: #1f232b; border-radius: 3px; margin-top: 1px">+3</span>
+<span style="grid-row: 11 / span 2; grid-column: 1; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+3</span>
+<span style="grid-row: 11 / span 2; grid-column: 3; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+5</span>
+<span style="grid-row: 13 / span 2; grid-column: 1; display: flex; align-items: center; justify-content: center; background: #1f232b; border-radius: 3px; margin-top: 1px">+5</span>
+<span style="grid-row: 13 / span 2; grid-column: 3; display: flex; align-items: center; justify-content: center; background: #1f232b; border-radius: 3px; margin-top: 1px">+6</span>
+<span style="grid-row: 15 / span 2; grid-column: 1; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+6</span>
+<span style="grid-row: 15 / span 2; grid-column: 3; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+7</span>
+<span style="grid-row: 17 / span 2; grid-column: 1; display: flex; align-items: center; justify-content: center; background: #1f232b; border-radius: 3px; margin-top: 1px">+8</span>
+<span style="grid-row: 17 / span 2; grid-column: 3; display: flex; align-items: center; justify-content: center; background: #1f232b; border-radius: 3px; margin-top: 1px">+10</span>
+<span style="grid-row: 19 / span 2; grid-column: 1; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+12</span>
+<span style="grid-row: 19 / span 2; grid-column: 3; display: flex; align-items: center; justify-content: center; background: #22262f; border-radius: 3px; margin-top: 1px">+14</span>
+</div>
+</div>
+
+<div style="width: 50px; flex-shrink: 0">
+<div title="Threat" style="display: flex; align-items: center; justify-content: center; gap: 4px; height: 24px; margin-bottom: 8px"><img src="assets/icons/ThreatTrack.svg" alt="Threat" style="width: 16px; height: 16px; display: block"><b style="font-size: 17px">3</b></div>
+<div style="height: 14px; font-size: 10px; color: #a8a291; text-align: center">差 3 格</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(28, 21px); font-size: 13px">
+<span style="grid-row: 1 / span 3; background: #4d3a5c; box-shadow: inset 0 0 0 1px #c98fd1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 700">3</span>
+<span style="grid-row: 4 / span 3; margin-top: 3px; background: #2b2633; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">4</span>
+<span style="grid-row: 7 / span 4; margin-top: 3px; background: #2b2633; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">5</span>
+<span style="grid-row: 11 / span 3; margin-top: 3px; background: #2b2633; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">6</span>
+<span style="grid-row: 14 / span 3; margin-top: 3px; background: #2b2633; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">7</span>
+<span style="grid-row: 17 / span 3; margin-top: 3px; background: #2b2633; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">8</span>
+<span style="grid-row: 20 / span 3; margin-top: 3px; background: #2b2633; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">9</span>
+<span style="grid-row: 23 / span 3; margin-top: 3px; background: #2b2633; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">10</span>
+<span style="grid-row: 26 / span 2; margin-top: 3px; background: #2b2633; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">11</span>
+<span style="grid-row: 28; margin-top: 3px; background: #2b2633; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0; font-size: 11px">12</span>
+</div>
+</div>
+
+<div style="width: 50px; flex-shrink: 0">
+<div title="Resistance" style="display: flex; align-items: center; justify-content: center; gap: 4px; height: 24px; margin-bottom: 8px"><img src="assets/icons/ResistanceTrack.svg" alt="Resistance" style="width: 16px; height: 16px; display: block"><b style="font-size: 17px">0</b></div>
+<div style="height: 14px; font-size: 10px; color: #a8a291; text-align: center">差 3 格</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(28, 21px); font-size: 13px">
+<span style="grid-row: 1 / span 3; background: #24465a; box-shadow: inset 0 0 0 1px #7fa8d9; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 700">0</span>
+<span style="grid-row: 4 / span 3; margin-top: 3px; background: #1c2731; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">1</span>
+<span style="grid-row: 7 / span 3; margin-top: 3px; background: #1c2731; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">2</span>
+<span style="grid-row: 10 / span 3; margin-top: 3px; background: #1c2731; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">3</span>
+<span style="grid-row: 13 / span 4; margin-top: 3px; background: #1c2731; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">4</span>
+<span style="grid-row: 17 / span 4; margin-top: 3px; background: #1c2731; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">5</span>
+<span style="grid-row: 21 / span 3; margin-top: 3px; background: #1c2731; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">6</span>
+<span style="grid-row: 24 / span 3; margin-top: 3px; background: #1c2731; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">7</span>
+<span style="grid-row: 27 / span 2; margin-top: 3px; background: #1c2731; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #c9c2b0">8</span>
+</div>
+</div>
+
+</div>
+<div style="color: #a8a291; font-size: 11px; line-height: 1.55; margin-top: auto; padding-top: 8px; text-align: center">亮的是目前位置 · 金框是 Distance 方塊 · 紅是失敗</div>
+</section>
+
+<div style="background: #1a1d24; border: 1px solid #2c303b; border-radius: 10px; padding: 8px 10px; display: flex; justify-content: space-between; font-size: 12px; color: #a8a291">
+<span>Deck <b style="color: #ede7d8; font-size: 14px">5</b></span>
+<span>Discard <b style="color: #ede7d8; font-size: 14px">0</b></span>
+<span>Explored <b style="color: #ede7d8; font-size: 14px">0</b></span>
+</div>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
