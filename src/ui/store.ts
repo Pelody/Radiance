@@ -4,6 +4,7 @@ import { InvalidAnswer } from '../engine/core';
 import { canUndo, newGame, view, type Game, type View } from '../engine/game';
 import type { SetupOptions } from '../engine/setup';
 import type { LogEntry } from '../engine/types';
+import { cloudLoad, cloudSave } from './cloud';
 import { act, autoAdvance, emptyMemory, undoToStop, type FlowMemory, type FlowSettings } from './flow';
 
 const SAVE_KEY = 'radiance.save.v1';
@@ -12,6 +13,18 @@ const SETTINGS_KEY = 'radiance.settings.v1';
 interface Saved {
   game: Game;
   mem: FlowMemory;
+  /** 存檔時間 (本機與雲端取較新的) */
+  savedAt?: number;
+}
+
+/** 存檔只保留目前階段的快照與之後的決定 (不含復原紀錄)，日誌保留最後 300 行，控制大小 */
+function compact(s: Saved): Saved {
+  const cp = s.game.session.checkpoint;
+  return {
+    game: { session: { checkpoint: { ...cp, log: cp.log.slice(-300) }, answers: s.game.session.answers }, undo: [] },
+    mem: s.mem,
+    savedAt: s.savedAt,
+  };
 }
 
 function load<T>(key: string): T | null {
@@ -77,9 +90,30 @@ export function useGameStore(): GameStore {
     }
   }, [saved]);
 
+  // 存檔：本機 localStorage + claude.ai 雲端 (有的話)
   useEffect(() => {
-    if (saved) save(SAVE_KEY, saved);
+    if (!saved) return;
+    const c = compact({ ...saved, savedAt: Date.now() });
+    save(SAVE_KEY, c);
+    void cloudSave(JSON.stringify(c), c.savedAt!);
   }, [saved]);
+
+  // 開啟時讀雲端存檔；比本機新就用雲端的
+  useEffect(() => {
+    let alive = true;
+    void cloudLoad().then((r) => {
+      if (!alive || !r) return;
+      try {
+        const cloud = JSON.parse(r.json) as Saved | null; // null = 放棄了那一局
+        setSaved((local) => (!local || (local.savedAt ?? 0) < r.savedAt ? cloud : local));
+      } catch {
+        // 壞掉的雲端存檔：忽略
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const run = useCallback(
     (f: () => Saved, before: number) => {
@@ -143,6 +177,7 @@ export function useGameStore(): GameStore {
     } catch {
       // ignore
     }
+    void cloudSave('null', Date.now());
     setSaved(null);
     setEvents([]);
   }, []);

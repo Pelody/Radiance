@@ -1,4 +1,5 @@
 // 成長畫面 (DG-14)、設定、重要事件 (UI-03)、遊戲結束。
+import { useState } from 'react';
 import type { LogEntry } from '../engine/types';
 import { abilitySpace, abilityTrackLength, characterSpace, characterTrackLength } from '../engine/tracks';
 import { abilityGrowthStatus, characterGrowthStatus } from '../engine/window';
@@ -87,6 +88,7 @@ export function SettingsModal({
   setSettings: (s: FlowSettings) => void;
   onQuit: () => void;
 }) {
+  const [sure, setSure] = useState(false);
   return (
     <Modal title="設定" onClose={onClose}>
       <label className="row gap10">
@@ -94,13 +96,17 @@ export function SettingsModal({
         每個行動窗口都停 (UI-10)
       </label>
       <div className="row gap10" style={{ marginTop: 16 }}>
-        <button
-          onClick={() => {
-            if (confirm('放棄目前這局，開新遊戲？')) onQuit();
-          }}
-        >
-          新遊戲
-        </button>
+        {sure ? (
+          <>
+            <span>放棄目前這局？</span>
+            <button className="primary" onClick={onQuit}>
+              放棄並開新遊戲
+            </button>
+            <button onClick={() => setSure(false)}>取消</button>
+          </>
+        ) : (
+          <button onClick={() => setSure(true)}>新遊戲</button>
+        )}
       </div>
     </Modal>
   );
