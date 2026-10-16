@@ -450,14 +450,16 @@ export function* enemyAttacks(ctx: Ctx, id: string, rule: string): Gen {
       continue;
     }
     const cid = pick === 'top' ? top! : pick.slice('hand:'.length);
-    const def = cardDefense(s, cid);
-    defense += def;
-    used++;
-    s.roundState.defendedWithCount++;
+    let def = cardDefense(s, cid);
     if (pick === 'top') p.deckTopKnown = false;
-    yield* discardPlayerCard(ctx, cid, pick === 'top' ? 'deckTop' : 'hand', 'P7-02');
+    // 棄掉時可能變成 clone (Hidden Depth)：每張 clone 的防禦值另計，不受效果修改 (KC-30 Clone)
+    const d = yield* discardPlayerCard(ctx, cid, pick === 'top' ? 'deckTop' : 'hand', 'P7-02');
+    if (d.cloneDefense !== null) def = d.copies * d.cloneDefense;
+    defense += def;
+    used += d.copies;
+    s.roundState.defendedWithCount += d.copies;
     ctx.log('P7-02', `以 ${cardName(cid)} 防禦 ${def}`);
-    yield* emit(ctx, { t: 'CardDefended', card: cid, enemy: id, defense: def });
+    for (let i = 0; i < d.copies; i++) yield* emit(ctx, { t: 'CardDefended', card: cid, enemy: id, defense: d.cloneDefense ?? def });
   }
   const wounds = Math.max(0, incoming - defense);
   ctx.log('P7-03', `${cardName(id)}：攻擊 ${incoming}，防禦 ${defense}，傷害 ${wounds}`);

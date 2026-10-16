@@ -7,3 +7,7 @@ import './justice';
 import './courage';
 import './temperance';
 import './wisdom';
+import './hunter';
+import './mender';
+import './scorchwright';
+import './wayfarer';

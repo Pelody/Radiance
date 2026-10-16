@@ -476,13 +476,22 @@ export function* drawCards(ctx: Ctx, n: number, rule: string, why: string): Gen<
 }
 
 /** KC-30 Discard：玩家卡 → 棄牌堆頂端 */
-export function* discardPlayerCard(ctx: Ctx, id: string, from: string, rule: string, extra: Record<string, unknown> = {}): Gen {
+export function* discardPlayerCard(ctx: Ctx, id: string, from: string, rule: string, extra: Record<string, unknown> = {}): Gen<{ copies: number; cloneDefense: number | null }> {
   const p = ctx.s.player;
   const prevEcho = currentEcho(ctx);
+  // 玩家主動棄的卡可以變成 clone (Hidden Depth)：copies = 算作棄掉幾張
+  let copies = 1;
+  let cloneDefense: number | null = null;
+  if (from === 'hand' || from === 'deckTop' || from === 'effect') {
+    const will = yield* emitWill(ctx, { t: 'WillDiscardCard', card: id, from, copies: 1, cloneDefense: null });
+    copies = will.copies as number;
+    cloneDefense = will.cloneDefense as number | null;
+  }
   removeFromPlayerZones(ctx, id);
   p.discard.push(id);
-  ctx.log(rule, `棄掉 ${playerCard(id).name}`);
-  yield* emit(ctx, { t: 'CardDiscarded', card: id, from, prevEcho, ...extra });
+  ctx.log(rule, `棄掉 ${playerCard(id).name}${copies !== 1 ? ` (算作 ${copies} 張 clone)` : ''}`);
+  yield* emit(ctx, { t: 'CardDiscarded', card: id, from, prevEcho, copies, ...extra });
+  return { copies, cloneDefense };
 }
 
 export function removeFromPlayerZones(ctx: Ctx, id: string): void {
