@@ -1,6 +1,6 @@
 // 世界：探索完成與移動 (P5-04、P5-05、T1 ~ T5、FL-02/03、SH-02)。
 import type { Ctx, Gen, Option } from './core';
-import { locationCard } from './data';
+import { cardName, locationCard } from './data';
 import { activeEffects } from './effects';
 import {
   beaconLimit,
@@ -16,6 +16,7 @@ import {
   advanceResistance,
   advanceThreat,
   emit,
+  emitWill,
   gainXP,
   locName,
   runEffect,
@@ -32,11 +33,33 @@ export function newLocation(id: string): LocationInPlay {
 /** 在目前地點放 Progress；P5-05 任何時候因此完全探索都立即移動 */
 export function* placeLocationProgress(ctx: Ctx, n: number, rule: string, why: string): Gen {
   if (n <= 0) return;
+  // 取代效果 (Sol Starcaster：前 2 個改放到 Treachery)
+  const will = yield* emitWill(ctx, { t: 'WillPlaceLocationProgress', n });
+  n = will.n as number;
+  if (n <= 0) return;
   const loc = ctx.s.world.location;
   loc.progress += n;
   ctx.log(rule, `${locName(loc.id)} Progress +${n} (${why})，共 ${loc.progress}/${locationEV(ctx.s)}`);
   yield* emit(ctx, { t: 'ProgressPlaced', target: 'location', n });
   yield* checkExplored(ctx);
+}
+
+/** Envy：在玩家區的地點放 Progress；探索完成就移出遊戲 (附著的敵人解除附著)，獲得 XP */
+export function* placeEnvyProgress(ctx: Ctx, id: string, n: number): Gen {
+  const w = ctx.s.world;
+  const loc = w.envyLocations.find((l) => l.id === id);
+  if (!loc || n <= 0) return;
+  loc.progress += n;
+  const ev = locationEV(ctx.s, id);
+  ctx.log('SH-01', `玩家區的 ${cardName(id)} Progress +${n}，共 ${loc.progress}/${ev}`);
+  if (loc.progress < ev) return;
+  w.envyLocations = w.envyLocations.filter((l) => l.id !== id);
+  for (const [e, l] of Object.entries(w.envyAttach)) if (l === id) delete w.envyAttach[e];
+  for (const a of loc.attachments) ctx.s.player.discard.push(a);
+  w.removedLocations.push(id);
+  ctx.log('SH-01', `玩家區的 ${cardName(id)} 已探索，移出遊戲`);
+  yield* gainXP(ctx, locationCard(id).xp_reward, 'SH-01', `探索 ${cardName(id)}`);
+  yield* emit(ctx, { t: 'LocationExplored', location: id, final: false, envy: true });
 }
 
 /** P5-03 / P5-04 / FL-02 / FL-03 */
@@ -144,7 +167,15 @@ export function* travel(ctx: Ctx, explored: boolean): Gen {
         ctx.revealInfo();
         ctx.log('OPEN-06', '地點棄牌堆洗成新牌庫');
       }
-      const card = w.locationDeck.shift()!;
+      let card = w.locationDeck.shift()!;
+      if (ctx.s.roundState.flags.burningBright && w.locationDeck.length) {
+        // Burning Bright：每次抽 3 張，選 1 張當作抽到的卡，其他 2 張 cycle
+        const more = w.locationDeck.splice(0, 2);
+        ctx.revealInfo();
+        const all = [card, ...more];
+        card = yield* ctx.choose('T1c', 'Burning Bright：選 1 張當作抽到的地點 (其他放到地點牌庫底部)', all.map((id) => ({ id, label: locName(id) })));
+        w.locationDeck.push(...all.filter((x) => x !== card));
+      }
       w.revealedLocation = card;
       ctx.revealInfo();
       ctx.log('T1c', `翻開地點 ${locName(card)}`);
@@ -198,19 +229,21 @@ export function* travel(ctx: Ctx, explored: boolean): Gen {
     }
   }
 
-  // ---- T2 結算距離
+  // ---- T2 結算距離 (結算前的選擇性減少：Foresight+、Choose Wisely、Lay of the Land+ 等)
   const d = distanceBreakdown(s, dest, deferred.length);
-  const cost = travelCost(s, d.total);
+  const dw = yield* emitWill(ctx, { t: 'WillResolveDistance', dest, distance: d.total, min: d.minimum, deferred: deferred.length, from: w.location.id });
+  const distance = Math.max(dw.min as number, dw.distance as number);
+  const cost = travelCost(s, distance);
   ctx.log(
     'T2a',
-    `距離 ${d.total} = 地理 ${d.geographic} + Obstacle ${d.obstacles} − Path ${d.paths} + 延後 ${d.deferred}${d.effects ? ` + 效果 ${d.effects}` : ''}`,
+    `距離 ${distance} = 地理 ${d.geographic} + Obstacle ${d.obstacles} − Path ${d.paths} + 延後 ${d.deferred}${d.effects ? ` + 效果 ${d.effects}` : ''}${distance !== d.total ? ` (選擇性減少 ${d.total - distance})` : ''}`,
   );
   ctx.log('T2b', `距離方塊 box ${cost.fromBox} → ${cost.toBox}：威脅 +${cost.threat}、抗性 +${cost.resistance}`);
   yield* advanceThreat(ctx, cost.threat, 'T2b', '移動');
   yield* advanceResistance(ctx, cost.resistance, 'T2b', '移動');
   w.distanceBox = startBoxForCorruption(s);
   ctx.log('T2b', `距離方塊重設到 box ${w.distanceBox} (腐化 ${w.corruption})`);
-  yield* emit(ctx, { t: 'DistanceResolved', distance: d.total });
+  yield* emit(ctx, { t: 'DistanceResolved', distance, dest, from: w.location.id });
 
   // ---- T3 抵達
   const old = w.location;
@@ -223,6 +256,7 @@ export function* travel(ctx: Ctx, explored: boolean): Gen {
   w.location.threatTokens = t3b + cost.threatTokens;
   w.newLocationTokenOnLocation = true;
   w.visited.push(dest);
+  w.arrivalRound = s.round;
   ctx.log('T3a', `抵達 ${locName(dest)}；${locName(old.id)} 進入地點棄牌堆`);
   if (t3b) ctx.log('T3b', `舊地點 ${old.paths} 個 Path → 新地點 Threat token +${t3b}`);
   if (cost.threatTokens) ctx.log('T2c', `距離溢出 ${cost.overflow}：新地點 Threat token +${cost.threatTokens}`);
@@ -246,10 +280,35 @@ export function* travel(ctx: Ctx, explored: boolean): Gen {
     if (!w.shadeRevealed) w.shadeRevealPending = true;
     ctx.log('SH-02', `${locName(dest)} 成為本局的最終地點；下一個 Staging 結束時揭示 ${w.shade}`);
   }
-  const arrival = activeEffects(s).find((x) => x.src.cardId === dest && x.def.uponArrival);
+  if (w.shade === 'Envy' && isFinalCandidate(s, dest) && !w.shadeRevealed && !ctx.s.roundState.flags.envySearched) envyLocations(ctx);
+  const arrival = activeEffects(s).find((x) => x.src.cardId === dest && x.src.kind === 'location' && !x.src.params?.envy && x.def.uponArrival);
   if (arrival) {
     ctx.log('T5', `${locName(dest)} Upon Arrival`);
     yield* runEffect(ctx, arrival.src, arrival.def, () => arrival.def.uponArrival!(ctx, arrival.src));
   }
-  yield* emit(ctx, { t: 'Arrived', location: dest, via });
+  yield* emit(ctx, { t: 'Arrived', location: dest, via, from: old.id, distance });
+}
+
+const ENVY_LOCATIONS = ['Eldirith Mountains', 'Sheer Valley', 'Terra Lake'];
+
+/** Envy 背面「When You Travel to a Final Location」：把 3 個地點放到玩家區 */
+function envyLocations(ctx: Ctx): void {
+  const s = ctx.s;
+  const w = s.world;
+  if (w.envyLocations.length || w.removedLocations.some((id) => ENVY_LOCATIONS.includes(locName(id)))) return;
+  const found: string[] = [];
+  for (const name of ENVY_LOCATIONS) {
+    const inDeck = w.locationDeck.find((id) => locName(id) === name);
+    const inDiscard = w.locationDiscard.find((id) => locName(id) === name);
+    const inBeacon = s.player.beacons.find((id) => locName(id) === name);
+    const id = inDeck ?? inDiscard ?? inBeacon;
+    if (!id || id === w.location.id) continue;
+    w.locationDeck = w.locationDeck.filter((x) => x !== id);
+    w.locationDiscard = w.locationDiscard.filter((x) => x !== id);
+    s.player.beacons = s.player.beacons.filter((x) => x !== id);
+    w.envyLocations.push(newLocation(id));
+    found.push(name);
+  }
+  ctx.revealInfo();
+  ctx.log('SH-01', `Envy：${found.join('、') || '沒有找到地點'} 放到玩家區 (效果生效到探索完成)`);
 }

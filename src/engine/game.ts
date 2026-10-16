@@ -9,7 +9,7 @@ import { Ctx, GameOver, InvalidAnswer, type Answer, type Decision } from './core
 import './cards';
 import { runPhase } from './phases';
 import { initialState, setupGen, type SetupOptions } from './setup';
-import type { GameState } from './types';
+import { normalizeState, type GameState } from './types';
 
 export interface Session {
   /** 某個階段開始時的狀態 */
@@ -135,5 +135,7 @@ export function serialize(g: Game): string {
   return JSON.stringify(g);
 }
 export function deserialize(json: string): Game {
-  return JSON.parse(json) as Game;
+  const g = JSON.parse(json) as Game;
+  for (const ss of [g.session, ...g.undo]) normalizeState(ss.checkpoint);
+  return g;
 }

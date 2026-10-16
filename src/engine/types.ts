@@ -59,6 +59,8 @@ export interface EnemyInPlay {
   wounds: number;
   progress: number;
   attachments: string[];
+  /** 效果改變的先後攻 (例：Wing Wraith 改成 Fast)；離場後失效 */
+  initiative?: 'Fast' | 'Slow';
 }
 
 export interface LocationInPlay {
@@ -145,6 +147,14 @@ export interface WorldState {
   shadeInfluence: number;
   /** 已探索完成的地點數 (T4 的可靠計數，不受 Shade 影響墊上限影響) */
   exploredCount: number;
+  /** 抵達目前地點的回合 (Eldirith Mountains「Beginning after the round you travel to…」) */
+  arrivalRound: number;
+  /** Envy：放在玩家區的地點 (SH-01 Envy 背面) */
+  envyLocations: LocationInPlay[];
+  /** Envy：敵人 → 附著的玩家區地點 */
+  envyAttach: Record<string, string>;
+  /** Wrath：本回合翻開的 Treachery (不算完成，Refresh 時 cycle) */
+  wrathTreachery: string | null;
 }
 
 /** EE-06 回合內持續效果：登記的效果積木 + 參數 + 到期時間 */
@@ -184,12 +194,57 @@ export interface RoundState {
   grantedTraits: { target: string; trait: string }[];
   /** 本回合已結算的「階段中強制效果」(EE-18a) 與開始/結束效果 */
   resolvedPhaseEffects: string[];
-  /** 本回合的數值修正 (EE-06 + EE-01)：例 Ember Strike +4 MainAttack */
-  mods: { stat: string; value: number; sourceId: string }[];
+  /** 本回合的數值修正 (EE-06 + EE-01)：例 Ember Strike +4 MainAttack；enemy/card 限定對象 */
+  mods: RoundMod[];
+  /** 本回合被忽略效果的敵人 (例：Unfettered Resolve) */
+  ignoredEnemies: string[];
+  /** 本回合移除的特質 (KC-16，例：Cut and Run) */
+  removedTraits: { target: string; trait: string }[];
+  /** 本回合技能狀態的改寫 (EE-02，例：Inner Strength+、Equilibrium) */
+  skillMods: SkillMods;
+  /** 本回合成長費用的折扣 (例：At All Costs、Spark) */
+  growthDiscounts: GrowthDiscount[];
+  /** 本回合還可以用 AP 攻擊幾個任務區敵人 (例：Farsight、Arcing Shot) */
+  questAttacks: number;
+  /** 本回合不能再攻擊 (Necro-Mage) */
+  attackLocked: boolean;
+  /** 本回合被 push 過的敵人 (Solitude) */
+  pushedThisRound: string[];
+  /** 本回合對自己造成的傷害 (Restoration+) */
+  selfWounded: number;
+  /** 本回合擊敗的敵人數 (Cold Roar) */
+  defeatedCount: number;
+  /** 其他本回合旗標 (EE-06) */
+  flags: Record<string, number>;
   /** Shade 揭示回合的威脅加值 (SH-03) */
   shadeInfluenceThreat: number;
   /** 本回合要揭示 Shade (SH-02) */
   revealShadeThisRound: boolean;
+}
+
+export interface RoundMod {
+  stat: string;
+  value: number;
+  sourceId: string;
+  enemy?: string;
+  card?: string;
+}
+
+export interface SkillMods {
+  unlockAll: boolean;
+  activeAll: boolean;
+  unlocked: string[];
+  active: string[];
+  locked: string[];
+}
+
+export interface GrowthDiscount {
+  track: 'any' | 'character';
+  kind: 'minus' | 'setTo';
+  value: number;
+  /** 折到 0 以下的部分換成 XP 的上限 (At All Costs+) */
+  excessToXP?: number;
+  sourceName: string;
 }
 
 export interface LogEntry {
@@ -244,5 +299,26 @@ export function emptyRoundState(): RoundState {
     mods: [],
     shadeInfluenceThreat: 0,
     revealShadeThisRound: false,
+    ignoredEnemies: [],
+    removedTraits: [],
+    skillMods: { unlockAll: false, activeAll: false, unlocked: [], active: [], locked: [] },
+    growthDiscounts: [],
+    questAttacks: 0,
+    attackLocked: false,
+    pushedThisRound: [],
+    selfWounded: 0,
+    defeatedCount: 0,
+    flags: {},
   };
+}
+
+/** 舊存檔補上新欄位 */
+export function normalizeState(s: GameState): GameState {
+  s.roundState = { ...emptyRoundState(), ...s.roundState };
+  const w = s.world as Partial<WorldState> & WorldState;
+  w.arrivalRound ??= 0;
+  w.envyLocations ??= [];
+  w.envyAttach ??= {};
+  w.wrathTreachery ??= null;
+  return s;
 }

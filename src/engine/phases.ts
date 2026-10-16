@@ -1,12 +1,15 @@
 // 回合議程 (05-round-flow.md)：8 個階段依序進行，每個階段的步驟與窗口位置見 EE-18。
 import type { Answer, Ctx, Gen, Option } from './core';
 import { cardName, shadeFront } from './data';
-import { activeEffects, isMandatory, usageKey } from './effects';
+import { activeEffects, flag, isMandatory, restriction, usageKey } from './effects';
 import {
   apAvailable,
   apBreakdown,
+  attackType,
+  cardDefense,
   echo,
   enemyAttack,
+  enemyAttackCount,
   enemyDarkness,
   enemyDefenseVs,
   enemyTypes,
@@ -30,6 +33,7 @@ import {
   discardPlayerCard,
   drawCards,
   emit,
+  emitWill,
   enemyToPlayer,
   flushAfter,
   freeLightAvailable,
@@ -52,7 +56,7 @@ import { shadeInfo } from './shades';
 import { engagementSegment } from './tracks';
 import { emptyRoundState, PHASE_NAMES, type Phase } from './types';
 import { boundaryWindow, generalWindow, type WindowChoice } from './window';
-import { placeLocationProgress } from './world';
+import { placeEnvyProgress, placeLocationProgress } from './world';
 import { GameOver } from './core';
 
 // ---------------------------------------------------------------- P1 Staging
@@ -132,7 +136,8 @@ export interface ActionSetChoice {
 
 /** P2-03 光費總和 (DG-08 預覽也用) */
 export function actionSetCost(ctx: { s: Ctx['s'] }, c: ActionSetChoice): number {
-  return lightCost(ctx.s, c.action, 'action') + lightCost(ctx.s, c.attack, 'attack') + lightCost(ctx.s, c.booster, 'booster');
+  const el = face(ctx.s, c.booster).element; // 打出後的加成卡元素 (Singular Focus 等依此判斷)
+  return lightCost(ctx.s, c.action, 'action', el) + lightCost(ctx.s, c.attack, 'attack', el) + lightCost(ctx.s, c.booster, 'booster', el);
 }
 
 /** P2-05 付得起的光 (含免費光 EE-23) */
@@ -180,7 +185,7 @@ function* actionSet(ctx: Ctx): Gen<Phase> {
   p.actionSet.booster = ans.booster;
   const b = face(s, ans.booster);
   s.roundState.activeElement = b.element;
-  s.roundState.attackType = face(s, ans.attack).attack_type;
+  s.roundState.attackType = attackType(s);
   ctx.log(
     'P2-01',
     `行動 ${cardName(ans.action)}、攻擊 ${cardName(ans.attack)} (${s.roundState.attackType})、加成 ${cardName(ans.booster)} (${b.element})`,
@@ -280,8 +285,19 @@ function* explore(ctx: Ctx): Gen<Phase> {
   yield* boundaryWindow(ctx, 'explore', 'start');
   yield* generalWindow(ctx, 'explore', 'Explore：放進度之前');
   // P5-01 ~ P5-04 (探索完成到移動結束之間沒有一般窗口)
+  let ep = s.roundState.exploreEP;
+  // Envy Special：可以把 EP 分配給玩家區的地點
+  for (const loc of s.world.envyLocations.slice()) {
+    if (ep <= 0) break;
+    const need = Math.max(0, locationEV(s, loc.id) - loc.progress);
+    const k = yield* ctx.chooseNumber('SH-01', `分配多少 EP 給玩家區的 ${cardName(loc.id)}？(還需要 ${need})`, 0, Math.min(ep, need));
+    if (k > 0) {
+      ep -= k;
+      yield* placeEnvyProgress(ctx, loc.id, k);
+    }
+  }
   ctx.log('P5-02', `EV ${locationEV(s)}`);
-  yield* placeLocationProgress(ctx, s.roundState.exploreEP, 'P5-01', '探索 EP');
+  yield* placeLocationProgress(ctx, ep, 'P5-01', '探索 EP');
   yield* boundaryWindow(ctx, 'explore', 'end');
   return 'attack';
 }
@@ -290,16 +306,32 @@ function* explore(ctx: Ctx): Gen<Phase> {
 
 /** P6-02 一次 AP 分配的結果 (DG-11 預覽也用) */
 export function attackPreview(s: Ctx['s'], enemy: string, amount: number): { blocked: number; wounds: number } {
-  const type = s.roundState.attackType ?? apBreakdown(s).type;
+  const type = attackType(s);
   const blocked = type ? Math.min(amount, enemyDefenseVs(s, enemy, type)) : 0;
   return { blocked, wounds: amount - blocked };
 }
 
-function attackTargets(s: Ctx['s']): Option[] {
+/** P6-02 可以攻擊的敵人 (玩家區；效果允許時也包括任務區) */
+export function attackTargets(s: Ctx['s']): Option[] {
   const avail = apAvailable(s);
-  return s.world.playerArea.map((id) => {
-    const why = s.roundState.attackedThisPhase.includes(id) ? '本階段已攻擊過 (P6-02)' : avail <= 0 ? '沒有 AP' : null;
-    return { id: `assign:${id}`, label: `攻擊 ${cardName(id)}`, rule: 'P6-02', legal: !why, reason: why ?? undefined, data: { enemy: id, max: avail } };
+  const rs = s.roundState;
+  const quest = rs.questAttacks > 0 ? s.world.questArea : [];
+  return [...s.world.playerArea, ...quest].map((id) => {
+    const why = rs.attackedThisPhase.includes(id)
+      ? '本階段已攻擊過 (P6-02)'
+      : avail <= 0
+        ? '沒有 AP'
+        : rs.attackLocked
+          ? '本回合不能再攻擊 (Necro-Mage)'
+          : restriction(s, { kind: 'attack', enemy: id });
+    return {
+      id: `assign:${id}`,
+      label: `攻擊 ${cardName(id)}${s.world.questArea.includes(id) ? ' (Quest)' : ''}`,
+      rule: 'P6-02',
+      legal: !why,
+      reason: why ?? undefined,
+      data: { enemy: id, max: avail },
+    };
   });
 }
 
@@ -325,22 +357,27 @@ function* assignAP(ctx: Ctx, ch: WindowChoice): Gen {
   const amount = ch.amount as number;
   const avail = apAvailable(s);
   assert(Number.isInteger(amount) && amount >= 1 && amount <= avail, `AP 要在 1–${avail} 之間`);
-  assert(s.world.playerArea.includes(enemy) && !rs.attackedThisPhase.includes(enemy), '不能攻擊這個敵人');
+  const legal = attackTargets(s).find((o) => o.id === `assign:${enemy}`);
+  assert(legal && legal.legal !== false, legal?.reason ?? '不能攻擊這個敵人');
   const ap = apBreakdown(s);
+  const inQuest = s.world.questArea.includes(enemy);
+  if (inQuest) rs.questAttacks--;
   rs.apSpent += amount;
   rs.attackedThisPhase.push(enemy);
   const { blocked, wounds } = attackPreview(s, enemy, amount);
-  ctx.log('P6-02', `${amount} AP → ${cardName(enemy)} (${ap.type})：擋下 ${blocked}，傷害 ${wounds}`);
-  yield* emit(ctx, { t: 'EnemyAttackedByYou', enemy, ap: amount, type: ap.type });
+  ctx.log('P6-02', `${amount} AP → ${cardName(enemy)}${inQuest ? ' (Quest)' : ''} (${ap.type})：擋下 ${blocked}，傷害 ${wounds}`);
+  yield* emit(ctx, { t: 'EnemyAttackedByYou', enemy, ap: amount, type: ap.type, zone: inQuest ? 'quest' : 'player' });
   yield* woundEnemy(ctx, enemy, wounds, 'attack', 'P6-02');
   yield* flushAfter(ctx);
 }
 
 // ---------------------------------------------------------------- P7 Defend
 
-function attackers(s: Ctx['s']): Option[] {
+/** P7-01 還要攻擊的敵人 (Garadeth Seeker 等可攻擊多次) */
+export function attackers(s: Ctx['s']): Option[] {
+  const done = (id: string) => s.roundState.attackedPlayer.filter((x) => x === id).length;
   return s.world.playerArea
-    .filter((id) => !s.roundState.disarmed.includes(id) && !s.roundState.attackedPlayer.includes(id))
+    .filter((id) => !s.roundState.disarmed.includes(id) && done(id) < enemyAttackCount(s, id))
     .map((id) => ({ id: `attacker:${id}`, label: `${cardName(id)} 攻擊 (${enemyAttack(s, id)} ${enemyTypes(s, id).join('/')})`, rule: 'P7-01' }));
 }
 
@@ -365,20 +402,23 @@ export function* enemyAttacks(ctx: Ctx, id: string, rule: string): Gen {
   const s = ctx.s;
   const p = s.player;
   const types = enemyTypes(s, id);
-  yield* emit(ctx, { t: 'EnemyAttacks', enemy: id });
+  // 「When this enemy attacks」的效果可以改這次攻擊的數值 (delta：Thretin Hillman、Shadian Tracker)
+  const ev = { t: 'EnemyAttacks', enemy: id, delta: 0 };
+  yield* emit(ctx, ev);
   if (!s.world.enemies[id]) return;
-  const incoming = enemyAttack(s, id);
+  const incoming = Math.max(0, enemyAttack(s, id) + ev.delta);
   ctx.log(rule, `${cardName(id)} 攻擊 ${incoming} (${types.join('/')})`);
   let defense = 0;
   let used = 0;
   // P7-02 防禦：手牌及/或牌庫頂端，類型必須相符 (P7-01a 雙重類型兩種都可以)
   for (;;) {
     const matches = (cid: string) => types.includes(face(s, cid).attack_type);
-    const top = p.deck[0];
+    const deckBlocked = restriction(s, { kind: 'defendFromDeck' });
+    const top = deckBlocked ? undefined : p.deck[0];
     const opts: Option[] = [
       ...p.hand.map((cid) => ({
         id: `hand:${cid}`,
-        label: `${cardName(cid)} (${face(s, cid).defense} ${face(s, cid).attack_type})`,
+        label: `${cardName(cid)} (${cardDefense(s, cid)} ${face(s, cid).attack_type})`,
         legal: matches(cid),
         reason: matches(cid) ? undefined : '類型不符',
         rule: 'P7-02',
@@ -388,12 +428,12 @@ export function* enemyAttacks(ctx: Ctx, id: string, rule: string): Gen {
     if (top && p.deckTopKnown)
       opts.push({
         id: 'top',
-        label: `牌庫頂端 ${cardName(top)} (${face(s, top).defense} ${face(s, top).attack_type})`,
+        label: `牌庫頂端 ${cardName(top)} (${cardDefense(s, top)} ${face(s, top).attack_type})`,
         legal: matches(top),
         reason: matches(top) ? undefined : '類型不符，留在牌庫頂端 (OPEN-05)',
         rule: 'P7-02',
       });
-    if (!top && p.discard.length) opts.push({ id: 'reshuffle', label: '重洗牌庫 (腐化 +1)', rule: 'KC-27' });
+    if (!deckBlocked && !p.deck.length && p.discard.length) opts.push({ id: 'reshuffle', label: '重洗牌庫 (腐化 +1)', rule: 'KC-27' });
     opts.push({ id: 'done', label: `承受 ${Math.max(0, incoming - defense)} 傷害`, rule: 'P7-03' });
     const legal = opts.filter((o) => o.legal !== false);
     if (legal.length === 1) break;
@@ -410,18 +450,18 @@ export function* enemyAttacks(ctx: Ctx, id: string, rule: string): Gen {
       continue;
     }
     const cid = pick === 'top' ? top! : pick.slice('hand:'.length);
-    const def = face(s, cid).defense;
+    const def = cardDefense(s, cid);
     defense += def;
     used++;
     s.roundState.defendedWithCount++;
     if (pick === 'top') p.deckTopKnown = false;
     yield* discardPlayerCard(ctx, cid, pick === 'top' ? 'deckTop' : 'hand', 'P7-02');
     ctx.log('P7-02', `以 ${cardName(cid)} 防禦 ${def}`);
-    yield* emit(ctx, { t: 'CardDefended', card: cid, enemy: id });
+    yield* emit(ctx, { t: 'CardDefended', card: cid, enemy: id, defense: def });
   }
   const wounds = Math.max(0, incoming - defense);
   ctx.log('P7-03', `${cardName(id)}：攻擊 ${incoming}，防禦 ${defense}，傷害 ${wounds}`);
-  yield* woundPlayer(ctx, wounds, 'enemyAttack', 'P7-03', `${cardName(id)} 的攻擊`);
+  yield* woundPlayer(ctx, wounds, 'enemyAttack', 'P7-03', `${cardName(id)} 的攻擊`, id);
   yield* emit(ctx, { t: 'EnemyAttackResolved', enemy: id, blocked: Math.min(defense, incoming), wounds, defendedWith: used });
 }
 
@@ -437,11 +477,16 @@ function* refresh(ctx: Ctx): Gen<Phase> {
   if (w.newLocationTokenOnLocation) {
     w.newLocationTokenOnLocation = false;
     ctx.log('P8-01', 'New Location 指示物移到地點牌庫頂端');
+  } else if (flag(s, 'noRefreshThreatToken')) {
+    ctx.log('P8-01', '效果：Refresh 不放 Threat token');
   } else {
     yield* addThreatTokens(ctx, 1, 'P8-01', 'Refresh');
   }
-  // P8-02 產光
-  yield* gainLight(ctx, lightProduction(s), 'P8-02', `光產出 ${lightProduction(s)}`);
+  // P8-02 產光 (產光前可被改寫：Tireless Patrols、Northwood City)
+  const prod = yield* emitWill(ctx, { t: 'WillProduceLight', n: lightProduction(s) });
+  const produced = Math.max(0, prod.n as number);
+  yield* gainLight(ctx, produced, 'P8-02', `光產出 ${produced}`);
+  yield* emit(ctx, { t: 'LightProduced', n: produced });
   yield* generalWindow(ctx, 'refresh', 'Refresh：休息之前');
 
   // P8-03 休息
@@ -518,9 +563,18 @@ function* refresh(ctx: Ctx): Gen<Phase> {
   }
   ctx.log('KC-20', `echo：${echo(s) ? cardName(echo(s)!) : '無'}`);
 
-  // P8-05 補牌
-  const need = handSize(s) - p.hand.length;
-  if (need > 0) yield* drawCards(ctx, need, 'P8-05', `補到手牌上限 ${handSize(s)}`);
+  // P8-05 補牌 (Djinn of Ire 可能少抽 1 張)
+  const need0 = handSize(s) - p.hand.length;
+  const refill = yield* emitWill(ctx, { t: 'WillRefill', n: Math.max(0, need0) });
+  const need = refill.n as number;
+  if (need > 0) yield* drawCards(ctx, need, 'P8-05', `補到手牌上限 ${handSize(s)}${need < need0 ? ` (少抽 ${need0 - need})` : ''}`);
+  yield* emit(ctx, { t: 'HandRefilled' });
+  // Wrath：本回合翻開的 Treachery 在 Refresh Phase cycle
+  if (w.wrathTreachery) {
+    w.treacheryDeck.push(w.wrathTreachery);
+    ctx.log('SH-01', `Wrath 的 Treachery ${cardName(w.wrathTreachery)} cycle 到牌庫底部`);
+    w.wrathTreachery = null;
+  }
   // P8-06 夥伴 Ready (選用模組 11)
   yield* generalWindow(ctx, 'refresh', 'Refresh：回合結束之前');
   yield* boundaryWindow(ctx, 'refresh', 'end');
@@ -535,7 +589,9 @@ export function checkWin(ctx: Ctx): void {
   const s = ctx.s;
   const w = s.world;
   const atFinal = !!w.finalLocation && isFinalLocation(s, w.location.id);
-  const explored = atFinal && w.location.explored && w.location.progress >= locationEV(s);
+  let explored = atFinal && w.location.explored && w.location.progress >= locationEV(s);
+  // Envy：玩家區的地點都探索完 + Envy 擊敗；不需要探索最終地點
+  if (w.shade === 'Envy') explored = w.shadeRevealed && w.envyLocations.length === 0;
   if (w.shadeDefeated && explored) {
     ctx.log('WIN-01', `勝利：${w.shade} 已擊敗，最終地點已探索`);
     s.outcome = { result: 'win', rule: 'WIN-01', reason: `${w.shade} 已擊敗，最終地點已探索` };
@@ -554,7 +610,9 @@ export function startNewRound(ctx: Ctx): void {
   }
   s.round++;
   // SH-02 移動到最終地點之後的下一個 Staging Phase 結束時揭示
-  if (s.world.shadeRevealPending && !s.world.shadeRevealed) s.roundState.revealShadeThisRound = true;
+  // Envy：玩家區的地點全部探索完之後才揭示
+  const envyWait = s.world.shade === 'Envy' && s.world.envyLocations.length > 0;
+  if (s.world.shadeRevealPending && !s.world.shadeRevealed && !envyWait) s.roundState.revealShadeThisRound = true;
   ctx.log('P8-07', `第 ${s.round} 回合開始`);
 }
 

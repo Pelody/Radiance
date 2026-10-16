@@ -70,6 +70,10 @@ export class Ctx {
   afterQueue: QueuedTrigger[] = [];
   /** EE-14 echo 快照堆疊 */
   echoStack: (string | null)[] = [];
+  /** 正在結算的效果來源 (事件的 by 欄位；Find a Way「other than this effect」) */
+  srcStack: string[] = [];
+  /** 最外層效果結算的序號 (同一次效果結算觸發的事件共用) */
+  effectSeq = 0;
 
   constructor(public s: GameState) {}
 

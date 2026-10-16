@@ -16,8 +16,10 @@ import {
 import { shuffle } from './rng';
 import { shadeInfo } from './shades';
 import { corruptionMax, lightMax, trackMax } from './tracks';
-import { echo, enemyHP, luminaryHP } from './calc';
-import type { LingeringEffect } from './types';
+import { cardTraits, echo, enemyHP, enemyInitiative, enemyXP, luminaryHP } from './calc';
+import { ALL_TRAITS } from './data';
+import { restriction, skillUnlocked } from './effects';
+import type { LingeringEffect, SkillState } from './types';
 
 // ---------------------------------------------------------------- 失敗檢查 (EE-15、LOSE-01)
 
@@ -70,12 +72,15 @@ export function roundLimit(def: EffectDef): number | undefined {
  * 依序結算 after 效果 (EE-10)。
  */
 export function* runEffect(ctx: Ctx, src: Source, def: EffectDef, body: () => Gen): Gen {
+  if (ctx.effectDepth === 0) ctx.effectSeq++;
   ctx.effectDepth++;
   ctx.echoStack.push(echo(ctx.s));
+  ctx.srcStack.push(src.id);
   markUsed(ctx, src, def);
   try {
     yield* body();
   } finally {
+    ctx.srcStack.pop();
     ctx.echoStack.pop();
     ctx.effectDepth--;
   }
@@ -116,6 +121,7 @@ export function* gameAction(ctx: Ctx, body: () => Gen): Gen {
 
 /** 發出事件 (EE-08)：when 效果立即插入 (EE-09)，after 效果排入待辦 (EE-10) */
 export function* emit(ctx: Ctx, ev: GameEvent): Gen {
+  stamp(ctx, ev);
   if (ctx.gameActionDepth > 0) {
     ctx.deferredEvents.push(ev);
     return;
@@ -123,7 +129,7 @@ export function* emit(ctx: Ctx, ev: GameEvent): Gen {
   const now: { sourceId: string; key: string; ev: GameEvent }[] = [];
   for (const { src, def } of activeEffects(ctx.s)) {
     const tr = def.trigger;
-    if (!tr || tr.event !== ev.t) continue;
+    if (!tr || tr.event !== ev.t || tr.timing === 'will') continue;
     if (tr.filter && !tr.filter(ctx.s, src, ev)) continue;
     const lim = roundLimit(def);
     if (lim !== undefined && usedThisRound(ctx, src, def) >= lim) continue;
@@ -133,6 +139,31 @@ export function* emit(ctx: Ctx, ev: GameEvent): Gen {
   }
   if (now.length) yield* resolveTriggers(ctx, now);
   if (ctx.effectDepth === 0) yield* flushAfter(ctx);
+}
+
+/** 事件記下是哪個效果造成的 (by) 與第幾次最外層效果結算 (seq) */
+function stamp(ctx: Ctx, ev: GameEvent): void {
+  if (ev.by === undefined) ev.by = ctx.srcStack.length ? ctx.srcStack[ctx.srcStack.length - 1] : null;
+  if (ev.seq === undefined) ev.seq = ctx.effectDepth > 0 ? ctx.effectSeq : -1;
+}
+
+/**
+ * 「即將發生」的事件 (EE-03 取代效果、「When taking Wound…」)：will 觸發立即結算，
+ * 可以改寫事件內容 (例：ev.n)。遊戲動作中也立即結算，因為結果會影響事件本身。
+ */
+export function* emitWill<T extends GameEvent>(ctx: Ctx, ev: T): Gen<T> {
+  stamp(ctx, ev);
+  const now: { sourceId: string; key: string; ev: GameEvent }[] = [];
+  for (const { src, def } of activeEffects(ctx.s)) {
+    const tr = def.trigger;
+    if (!tr || tr.event !== ev.t || tr.timing !== 'will') continue;
+    if (tr.filter && !tr.filter(ctx.s, src, ev)) continue;
+    const lim = roundLimit(def);
+    if (lim !== undefined && usedThisRound(ctx, src, def) >= lim) continue;
+    now.push({ sourceId: src.id, key: def.key, ev });
+  }
+  if (now.length) yield* resolveTriggers(ctx, now);
+  return ev;
 }
 
 /**
@@ -231,8 +262,15 @@ export function* spendLight(ctx: Ctx, n: number, rule: string, why: string): Gen
 // ---------------------------------------------------------------- 傷害與治療
 
 /** P7-03 / KC-24：傷害放到角色身上；達到 HP 立即失敗 (KC-22) */
-export function* woundPlayer(ctx: Ctx, n: number, source: 'enemyAttack' | 'direct' | 'self', rule: string, why: string): Gen {
+export function* woundPlayer(ctx: Ctx, n: number, source: 'enemyAttack' | 'direct' | 'self', rule: string, why: string, enemy?: string): Gen {
   if (n <= 0) return;
+  const will = yield* emitWill(ctx, { t: 'WillWoundPlayer', n, source, enemy });
+  n = Math.max(0, will.n as number);
+  if (n <= 0) {
+    ctx.log(rule, `傷害全部抵銷 (${why})`);
+    return;
+  }
+  if (source === 'self') ctx.s.roundState.selfWounded += n;
   ctx.s.player.wounds += n;
   ctx.log(rule, `受到 ${n} 傷害 (${why})，共 ${ctx.s.player.wounds}`);
   checkLose(ctx);
@@ -375,10 +413,22 @@ export function* checkTreachery(ctx: Ctx): Gen {
 
 export function* revealTreachery(ctx: Ctx): Gen {
   const w = ctx.s.world;
-  const next = w.treacheryDeck.shift();
-  if (!next) {
+  if (!w.treacheryDeck.length) {
     ctx.log('OPEN-03', 'Treachery 牌庫已空，不再翻新的 Treachery');
     return;
+  }
+  const will = yield* emitWill(ctx, { t: 'WillRevealTreachery', draw: 1 });
+  let next: string;
+  if ((will.draw as number) > 1 && w.treacheryDeck.length > 1) {
+    // Controlled Disruption：抽 3 選 1，其他 cycle
+    const drawn = w.treacheryDeck.splice(0, will.draw as number);
+    ctx.revealInfo();
+    next = yield* ctx.choose('KC-30', '選擇要翻開的 Treachery (其他放到牌庫底部)', drawn.map((id) => ({ id, label: `${cardName(id)} (PV ${treacheryCard(id).progress_value})` })));
+    const rest = drawn.filter((x) => x !== next);
+    w.treacheryDeck.push(...rest);
+    ctx.log('KC-30', `Cycle ${rest.map(cardName).join('、')}`);
+  } else {
+    next = w.treacheryDeck.shift()!;
   }
   ctx.revealInfo();
   w.activeTreachery = next;
@@ -426,12 +476,13 @@ export function* drawCards(ctx: Ctx, n: number, rule: string, why: string): Gen<
 }
 
 /** KC-30 Discard：玩家卡 → 棄牌堆頂端 */
-export function* discardPlayerCard(ctx: Ctx, id: string, from: string, rule: string): Gen {
+export function* discardPlayerCard(ctx: Ctx, id: string, from: string, rule: string, extra: Record<string, unknown> = {}): Gen {
   const p = ctx.s.player;
+  const prevEcho = currentEcho(ctx);
   removeFromPlayerZones(ctx, id);
   p.discard.push(id);
   ctx.log(rule, `棄掉 ${playerCard(id).name}`);
-  yield* emit(ctx, { t: 'CardDiscarded', card: id, from });
+  yield* emit(ctx, { t: 'CardDiscarded', card: id, from, prevEcho, ...extra });
 }
 
 export function removeFromPlayerZones(ctx: Ctx, id: string): void {
@@ -447,9 +498,9 @@ export function removeFromPlayerZones(ctx: Ctx, id: string): void {
 // ---------------------------------------------------------------- 敵人 (KC-01 ~ KC-04)
 
 /** KC-30 Reveal：Fast 放任務區前端 (右)，Slow 放後端 (左) */
-export function placeInQuest(ctx: Ctx, id: string): void {
+export function placeInQuest(ctx: Ctx, id: string, revealing = false): void {
   const q = ctx.s.world.questArea;
-  if (enemyCard(id).initiative === 'Fast') q.push(id);
+  if (enemyInitiative(ctx.s, id, revealing) === 'Fast') q.push(id);
   else q.unshift(id);
 }
 
@@ -480,7 +531,7 @@ export function* revealEnemy(ctx: Ctx, deck: 'Dusk' | 'Doom', rule: string): Gen
   const id = d.deck.shift()!;
   ctx.revealInfo();
   w.enemies[id] = { id, wounds: 0, progress: 0, attachments: [] };
-  placeInQuest(ctx, id);
+  placeInQuest(ctx, id, true);
   const e = enemyCard(id);
   ctx.log(rule, `翻開 ${e.name} (${deck}，${e.initiative}，Darkness ${e.darkness})`);
   yield* resolveWhenRevealed(ctx, id);
@@ -510,7 +561,16 @@ export function* enemyToPlayer(ctx: Ctx, id: string, cause: 'engage' | 'pull' | 
 export function* enemyToQuest(ctx: Ctx, id: string, cause: 'push' | 'effect', rule: string): Gen {
   const w = ctx.s.world;
   if (!w.playerArea.includes(id)) return;
+  if (cause === 'push') {
+    const why = restriction(ctx.s, { kind: 'push', enemy: id });
+    if (why) {
+      ctx.log('EE-02', `不能 push ${cardName(id)}：${why}`);
+      return;
+    }
+    if (!ctx.s.roundState.pushedThisRound.includes(id)) ctx.s.roundState.pushedThisRound.push(id);
+  }
   w.playerArea = w.playerArea.filter((x) => x !== id);
+  delete w.envyAttach[id];
   placeInQuest(ctx, id);
   ctx.log(rule, `${cardName(id)} 回到 Quest Area (${cause === 'push' ? 'Push' : '效果'})`);
   yield* emit(ctx, { t: 'EnemyMovedToQuest', enemy: id, cause });
@@ -525,6 +585,9 @@ export function* push(ctx: Ctx, id: string, rule: string): Gen {
 
 /** 敵人受傷 (攻擊或直接傷害)；EE-16 傷害 ≥ HP 立即擊敗 */
 export function* woundEnemy(ctx: Ctx, id: string, n: number, source: 'attack' | 'direct' | 'companion', rule: string): Gen {
+  if (!ctx.s.world.enemies[id] || n <= 0) return;
+  const will = yield* emitWill(ctx, { t: 'WillWoundEnemy', enemy: id, n, source });
+  n = will.n as number;
   const e = ctx.s.world.enemies[id];
   if (!e || n <= 0) return;
   e.wounds += n;
@@ -542,7 +605,16 @@ export function* checkEnemyDefeated(ctx: Ctx, id: string): Gen {
 export function* defeatEnemy(ctx: Ctx, id: string): Gen {
   const w = ctx.s.world;
   const e = enemyCard(id);
+  if (!w.enemies[id]) return;
+  // 取代效果 (例：Necro-Mage「instead of defeating」)
+  const will = yield* emitWill(ctx, { t: 'WillDefeatEnemy', enemy: id, cancel: false });
+  if (will.cancel || !w.enemies[id]) return;
   const inst = w.enemies[id];
+  const surplus = Math.max(0, inst.wounds - enemyHP(ctx.s, id));
+  const initiative = enemyInitiative(ctx.s, id);
+  const xp = enemyXP(ctx.s, id);
+  const zone = w.questArea.includes(id) ? 'quest' : 'player';
+  const attachments = inst.attachments.slice();
   // When Defeated 在離場前取得 (來源需要仍在場上才能找到定義)
   const wd = activeEffects(ctx.s).find((x) => x.src.cardId === id && x.def.whenDefeated);
   w.questArea = w.questArea.filter((x) => x !== id);
@@ -552,7 +624,9 @@ export function* defeatEnemy(ctx: Ctx, id: string): Gen {
     ctx.log('KC-17', `附著卡 ${playerCard(a).name} 進入棄牌堆`);
   }
   delete w.enemies[id];
+  delete w.envyAttach[id];
   ctx.s.roundState.disarmed = ctx.s.roundState.disarmed.filter((x) => x !== id);
+  ctx.s.roundState.defeatedCount++;
   if (e.class === 'Shade') {
     w.shadeDefeated = true;
     ctx.log('SH-05', `擊敗 Shade ${e.name}，移出遊戲`);
@@ -562,12 +636,13 @@ export function* defeatEnemy(ctx: Ctx, id: string): Gen {
     (e.class === 'Dusk' ? w.duskDiscard : w.doomDiscard).push(id);
     ctx.log('P6-03', `擊敗 ${e.name}`);
   }
-  yield* gainXP(ctx, e.xp_reward, 'P6-03', `擊敗 ${e.name}`);
+  yield* gainXP(ctx, xp, 'P6-03', `擊敗 ${e.name}`);
   if (wd) {
     ctx.log('P6-03', `${e.name} When Defeated`);
+    wd.src.params = { ...wd.src.params, surplus, zone };
     yield* runEffect(ctx, wd.src, wd.def, () => wd.def.whenDefeated!(ctx, wd.src));
   }
-  yield* emit(ctx, { t: 'EnemyDefeated', enemy: id, initiative: e.initiative, cls: e.class });
+  yield* emit(ctx, { t: 'EnemyDefeated', enemy: id, initiative, cls: e.class, attachments, zone });
 }
 
 // ---------------------------------------------------------------- 選擇的輔助
@@ -616,4 +691,245 @@ export function locName(id: string): string {
 }
 export function anyName(id: string): string {
   return getCard(id).name ?? id;
+}
+
+// ---------------------------------------------------------------- 更多效果積木 (EE-23)
+
+/** KC-30 Disarm：該敵人本回合不攻擊 */
+export function disarm(ctx: Ctx, id: string, rule: string): void {
+  if (!ctx.s.world.enemies[id] || ctx.s.roundState.disarmed.includes(id)) return;
+  ctx.s.roundState.disarmed.push(id);
+  ctx.log(rule, `Disarm ${cardName(id)}`);
+}
+
+/** 敵人治療 (移除傷害)，回傳移除數 */
+export function healEnemy(ctx: Ctx, id: string, n: number, rule: string, why: string): number {
+  const e = ctx.s.world.enemies[id];
+  if (!e) return 0;
+  const k = Math.min(n, e.wounds);
+  if (k <= 0) return 0;
+  e.wounds -= k;
+  ctx.log(rule, `${cardName(id)} 治療 ${k} (${why})，剩 ${e.wounds} 傷害`);
+  return k;
+}
+
+export function* addEnemyProgress(ctx: Ctx, id: string, n: number, rule: string, why: string): Gen {
+  const e = ctx.s.world.enemies[id];
+  if (!e || n <= 0) return;
+  e.progress += n;
+  ctx.log(rule, `${cardName(id)} Progress +${n} (${why})，共 ${e.progress}`);
+  yield* emit(ctx, { t: 'ProgressPlaced', target: 'enemy', enemy: id, n });
+}
+
+/** 移除 (discard / spend) 敵人身上的 Progress，回傳實際移除數 */
+export function* removeEnemyProgress(ctx: Ctx, id: string, n: number, rule: string, why: string): Gen<number> {
+  const e = ctx.s.world.enemies[id];
+  if (!e) return 0;
+  const k = Math.min(n, e.progress);
+  if (k <= 0) return 0;
+  e.progress -= k;
+  ctx.log(rule, `${cardName(id)} Progress −${k} (${why})，剩 ${e.progress}`);
+  yield* emit(ctx, { t: 'ProgressRemoved', target: 'enemy', enemy: id, n: k });
+  return k;
+}
+
+/** KC-17 附著：玩家卡放到敵人或地點下方 */
+export function* attachCard(ctx: Ctx, card: string, target: string | 'location', rule: string): Gen {
+  const w = ctx.s.world;
+  if (target !== 'location' && !w.enemies[target]) return;
+  const from = ctx.s.player.hand.includes(card) ? 'hand' : ctx.s.player.discard.includes(card) ? 'discard' : 'play';
+  removeFromPlayerZones(ctx, card);
+  if (target === 'location') w.location.attachments.push(card);
+  else w.enemies[target].attachments.push(card);
+  ctx.log(rule, `${playerCard(card).name} 附著到 ${target === 'location' ? locName(w.location.id) : cardName(target)}`);
+  yield* emit(ctx, { t: 'CardAttached', card, target, from });
+}
+
+/** 附著卡離開 (棄到玩家棄牌堆) */
+export function* discardAttachment(ctx: Ctx, card: string, rule: string): Gen {
+  yield* discardPlayerCard(ctx, card, 'attachment', rule);
+}
+
+export function* removePath(ctx: Ctx, n: number, rule: string, why: string): Gen<number> {
+  const loc = ctx.s.world.location;
+  const k = Math.min(n, loc.paths);
+  if (k <= 0) return 0;
+  loc.paths -= k;
+  ctx.log(rule, `地點 Path −${k} (${why})，剩 ${loc.paths}`);
+  yield* emit(ctx, { t: 'PathRemoved', n: k });
+  return k;
+}
+
+/** 移除 Obstacle；destroy = 卡片寫 destroy (Cold Roar 監聽 ObstacleDestroyed) */
+export function* removeObstacle(ctx: Ctx, n: number, rule: string, why: string, destroy = false): Gen<number> {
+  const loc = ctx.s.world.location;
+  const k = Math.min(n, loc.obstacles);
+  if (k <= 0) return 0;
+  loc.obstacles -= k;
+  ctx.log(rule, `地點 Obstacle −${k} (${why})，剩 ${loc.obstacles}`);
+  yield* emit(ctx, { t: destroy ? 'ObstacleDestroyed' : 'ObstacleRemoved', n: k });
+  if (!destroy) yield* emit(ctx, { t: 'ObstacleDestroyed', n: k, removed: true });
+  return k;
+}
+
+export function* removeThreatToken(ctx: Ctx, n: number, rule: string, why: string): Gen<number> {
+  const loc = ctx.s.world.location;
+  const k = Math.min(n, loc.threatTokens);
+  if (k <= 0) return 0;
+  loc.threatTokens -= k;
+  ctx.log(rule, `地點 Threat token −${k} (${why})，剩 ${loc.threatTokens}`);
+  yield* emit(ctx, { t: 'ThreatTokenRemoved', n: k });
+  return k;
+}
+
+/** KC-30 Mill：牌庫頂端 N 張移到棄牌堆頂端 (不算棄牌)；牌庫用完就重洗 */
+export function* mill(ctx: Ctx, n: number, rule: string, why: string): Gen<number> {
+  const p = ctx.s.player;
+  let k = 0;
+  for (let i = 0; i < n; i++) {
+    if (!p.deck.length && !(yield* reshuffleDeck(ctx))) break;
+    const c = p.deck.shift()!;
+    p.deckTopKnown = false;
+    p.discard.push(c);
+    k++;
+    ctx.revealInfo();
+    ctx.log(rule, `Mill ${playerCard(c).name} (${why})`);
+    yield* emit(ctx, { t: 'CardMilled', card: c });
+  }
+  return k;
+}
+
+/** KC-30 Regenerate X：棄牌堆底部 X 張移到牌庫底部 */
+export function regenerate(ctx: Ctx, n: number, rule: string, why: string): number {
+  const p = ctx.s.player;
+  const k = Math.min(n, p.discard.length);
+  if (k <= 0) return 0;
+  const moved = p.discard.splice(0, k);
+  p.deck.push(...moved);
+  ctx.log(rule, `Regenerate ${k} (${why})：${moved.map((c) => playerCard(c).name).join('、')}`);
+  return k;
+}
+
+/** KC-16 本回合給卡片 (或敵人) 加 1 個特質 */
+export function* grantTrait(ctx: Ctx, target: string, rule: string, choices: readonly string[] = ALL_TRAITS): Gen<string | null> {
+  const have = new Set(cardTraits(ctx.s, target));
+  const opts = choices.filter((t) => !have.has(t));
+  if (!opts.length) return null;
+  const trait = yield* ctx.choose(rule, `給 ${cardName(target)} 1 個特質 (本回合)`, opts.map((t) => ({ id: t, label: t })));
+  ctx.s.roundState.grantedTraits.push({ target, trait });
+  ctx.log('KC-16', `${cardName(target)} 本回合獲得特質 ${trait}`);
+  return trait;
+}
+
+export function* exhaustSkill(ctx: Ctx, sk: SkillState, rule: string): Gen {
+  if (sk.exhausted) return;
+  sk.exhausted = true;
+  ctx.log(rule, `橫置技能 ${sk.name}`);
+  yield* emit(ctx, { t: 'SkillExhausted', skill: sk.name });
+}
+
+export function* readySkill(ctx: Ctx, sk: SkillState, rule: string): Gen {
+  if (!sk.exhausted) return;
+  sk.exhausted = false;
+  ctx.log(rule, `技能 ${sk.name} 重新 Ready`);
+  yield* emit(ctx, { t: 'SkillReadied', skill: sk.name });
+}
+
+/** 選一個技能橫置 (preferUnlocked：Tireless Patrols「You must choose unlocked skills, if possible」) */
+export function* chooseExhaustSkill(ctx: Ctx, rule: string, prompt: string, preferUnlocked = false): Gen<boolean> {
+  let list = ctx.s.player.skills.filter((k) => !k.exhausted);
+  if (preferUnlocked && list.some((k) => skillUnlocked(ctx.s, k))) list = list.filter((k) => skillUnlocked(ctx.s, k));
+  if (!list.length) return false;
+  const pick = yield* ctx.choose(rule, prompt, list.map((k) => ({ id: k.name, label: `${k.name} (${k.cubeElement}${k.unlocked ? '' : '，未解鎖'})` })));
+  yield* exhaustSkill(ctx, ctx.s.player.skills.find((k) => k.name === pick)!, rule);
+  return true;
+}
+
+/** 從手牌選卡 (min–max 張)，回傳選到的卡 (依選擇順序) */
+export function* chooseHandCards(ctx: Ctx, rule: string, prompt: string, min: number, max: number, filter: (id: string) => boolean = () => true): Gen<string[]> {
+  const cands = ctx.s.player.hand.filter(filter);
+  max = Math.min(max, cands.length);
+  if (max <= 0) return [];
+  if (min >= cands.length && max === cands.length && min === max) return cands.slice();
+  const a = (yield* ctx.decide({
+    type: 'cards',
+    rule,
+    prompt,
+    cards: cands,
+    min: Math.min(min, max),
+    max,
+    validate: (x) =>
+      Array.isArray(x) && x.length >= Math.min(min, max) && x.length <= max && x.every((c) => cands.includes(c)) && new Set(x).size === x.length
+        ? null
+        : `請選 ${Math.min(min, max)}–${max} 張`,
+  })) as string[];
+  return a;
+}
+
+/** 從一組卡中選 (cards 決策)，例：棄牌堆、牌庫 */
+export function* chooseCards(ctx: Ctx, rule: string, prompt: string, cands: string[], min: number, max: number): Gen<string[]> {
+  max = Math.min(max, cands.length);
+  if (max <= 0) return [];
+  const lo = Math.min(min, max);
+  const a = (yield* ctx.decide({
+    type: 'cards',
+    rule,
+    prompt,
+    cards: cands,
+    min: lo,
+    max,
+    validate: (x) =>
+      Array.isArray(x) && x.length >= lo && x.length <= max && x.every((c) => cands.includes(c)) && new Set(x).size === x.length ? null : `請選 ${lo}–${max} 張`,
+  })) as string[];
+  return a;
+}
+
+/** 選多個敵人 (0–max)，回傳選到的敵人 */
+export function* chooseEnemies(ctx: Ctx, rule: string, prompt: string, ids: string[], min: number, max: number): Gen<string[]> {
+  return yield* chooseCards(ctx, rule, prompt, ids, min, max);
+}
+
+/** 把 n 點 (Progress / Wound) 分配給一組敵人 (逐點選擇)；回傳 enemy → 數量 */
+export function* distribute(ctx: Ctx, rule: string, prompt: string, ids: string[], n: number): Gen<Record<string, number>> {
+  const out: Record<string, number> = {};
+  if (!ids.length || n <= 0) return out;
+  if (ids.length === 1) {
+    out[ids[0]] = n;
+    return out;
+  }
+  for (let i = 0; i < n; i++) {
+    const pick = yield* ctx.choose(
+      rule,
+      `${prompt} (第 ${i + 1}/${n} 點)`,
+      ids.map((id) => ({ id, label: `${cardName(id)}${out[id] ? ` (已 ${out[id]})` : ''}` })),
+    );
+    out[pick] = (out[pick] ?? 0) + 1;
+  }
+  return out;
+}
+
+/** 敵人立刻離開玩家區重新翻開到任務區 (Wing Wraith、Necro-Mage「re-reveal」) */
+export function* rerevealEnemy(ctx: Ctx, id: string, rule: string): Gen {
+  const w = ctx.s.world;
+  if (!w.enemies[id]) return;
+  w.questArea = w.questArea.filter((x) => x !== id);
+  w.playerArea = w.playerArea.filter((x) => x !== id);
+  delete w.envyAttach[id];
+  placeInQuest(ctx, id, true);
+  ctx.log(rule, `${cardName(id)} 重新翻開到 Quest Area (${enemyInitiative(ctx.s, id, true)})`);
+  yield* resolveWhenRevealed(ctx, id);
+  yield* emit(ctx, { t: 'EnemyRevealed', enemy: id, deck: null, again: true });
+}
+
+/** 依順序把一組任務區敵人拉進玩家區 (接戰) */
+export function* engageEnemies(ctx: Ctx, ids: string[], rule: string, cause: 'engage' | 'effect' = 'effect'): Gen {
+  for (const id of ids) yield* enemyToPlayer(ctx, id, cause, rule);
+}
+
+/** Scout：查看牌庫頂端 X 張 (DG-17 允許，寫在日誌上) */
+export function scout(ctx: Ctx, deck: string[], n: number, rule: string, what: string): string[] {
+  const top = deck.slice(0, n);
+  ctx.revealInfo();
+  ctx.log(rule, `Scout ${what}：${top.length ? top.map((c) => getCard(c).name).join('、') : '牌庫是空的'}`);
+  return top;
 }

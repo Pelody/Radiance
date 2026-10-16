@@ -176,3 +176,16 @@ export function ownerBasicCards(owner: string): PlayerCardData[] {
 export function cardImagePath(id: string): string {
   return `cards/${id}.webp`;
 }
+
+/** 全部特質 (玩家卡、敵人、地點圖示)；「grant any 1 trait」的選項 */
+export const ALL_TRAITS: readonly string[] = [
+  ...new Set(
+    CARDS.flatMap((c) =>
+      c.type === 'player_card' || c.type === 'enemy'
+        ? ((c as { traits?: string[] }).traits ?? [])
+        : c.type === 'location'
+          ? ((c as { trait_icons?: string[] }).trait_icons ?? [])
+          : [],
+    ),
+  ),
+].sort();
