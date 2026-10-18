@@ -372,6 +372,7 @@ defineLingering({
     timing: 'after',
     mandatory: true, // 沒有 may (KC-12c)
     filter: (_s, _src, ev) => ev.initiative === 'Fast',
+    resolvable: (s) => (s.world.questArea.some((id) => enemyInitiative(s, id) === 'Fast') ? null : '任務區沒有 Fast 敵人'), // EE-12a
     run: function* (ctx) {
       const fast = ctx.s.world.questArea.filter((id) => enemyInitiative(ctx.s, id) === 'Fast');
       const id = yield* chooseEnemy(ctx, 'KC-04', 'Shout：Pull 1 個 Fast 敵人', fast);

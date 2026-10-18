@@ -191,6 +191,30 @@ describe('Justice 技能', () => {
     const e = addEnemy(s, 'Green Wraith', 'quest');
     expect(useSkill(s, 'Shout').s.world.playerArea).toContain(e);
   });
+  const shoutTwice = (s: ReturnType<typeof base>) => {
+    for (let i = 0; i < 2; i++) s.lingering.push({ uid: s.nextUid++, key: 'Shout/fastPull', sourceId: 'skill:Shout', sourceName: 'Shout', params: {}, until: 'round' });
+  };
+  it('EE-12b：Shout 用了兩次，擊敗 Fast 敵人後不會問兩個一模一樣的效果先後', () => {
+    const s = base('Justice');
+    shoutTwice(s);
+    const a = addEnemy(s, 'Sol Scout', 'quest');
+    const b = addEnemy(s, 'Sol Scout', 'quest');
+    const r = fire(s, { t: 'EnemyDefeated', initiative: 'Fast' });
+    expect(r.decisions.some((d) => d.rule === 'EE-12')).toBe(false);
+    expect(r.s.world.playerArea).toEqual(expect.arrayContaining([a, b]));
+  });
+  it('EE-12a：任務區沒有 Fast 敵人時，Shout 的效果列出但不能選，按確定略過', () => {
+    const s = base('Justice');
+    shoutTwice(s);
+    addEnemy(s, 'Green Wraith', 'quest'); // Slow
+    const r = fire(s, { t: 'EnemyDefeated', initiative: 'Fast' });
+    const d = r.decisions.find((x) => x.rule === 'EE-12a')!;
+    expect(d).toBeDefined();
+    expect(d.options!.filter((o) => o.id.startsWith('blocked:')).every((o) => o.legal === false && o.reason === '任務區沒有 Fast 敵人')).toBe(true);
+    expect(d.options!.find((o) => o.id === 'ok')).toBeDefined();
+    expect(r.decisions.filter((x) => x.rule === 'EE-12a')).toHaveLength(1);
+    expect(r.s.world.playerArea).toEqual([]);
+  });
 });
 
 // ================================================================= Courage

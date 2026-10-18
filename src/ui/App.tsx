@@ -4,7 +4,7 @@ import { cardImagePath, getCard } from '../engine/data';
 import { Counts, StatusPanel, Tracks } from './Right';
 import { Hand, PlayerArea, PlayerBoard, QuestArea } from './Center';
 import { Header } from './Header';
-import { LogPanel, MapPanel, WorldPanel } from './World';
+import { GrowthPanel, LogPanel, MapPanel, WorldPanel } from './World';
 import { GameOver, GrowthModal, SettingsModal } from './Modals';
 import { DecisionModal, EffectPicker, PhaseIntro, Resolution, isModalDecision } from './overlays';
 import type { Option } from '../engine/core';
@@ -85,6 +85,7 @@ export function App() {
             <aside className="left" aria-label="世界">
               <WorldPanel />
               <MapPanel />
+              <GrowthPanel onOpen={() => setModal('growth')} />
               <LogPanel />
             </aside>
             <main className="center">

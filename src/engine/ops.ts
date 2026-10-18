@@ -172,21 +172,48 @@ export function* emitWill<T extends GameEvent>(ctx: Ctx, ev: T): Gen<T> {
  */
 export function* resolveTriggers(ctx: Ctx, items: { sourceId: string; key: string; ev: GameEvent }[]): Gen {
   let pending = items.slice();
+  /** EE-12a 已經在選單裡 (不能選) 顯示過的無法結算效果 */
+  let shownBlocked = false;
   while (pending.length) {
-    const live = pending.map((it) => ({ it, sd: stillActive(ctx, it) })).filter((x) => x.sd);
+    const live = pending
+      .map((it) => ({ it, sd: stillActive(ctx, it) }))
+      .filter((x) => x.sd)
+      .map((x) => ({ ...x, label: `${x.sd!.src.name}：${x.sd!.def.label}`, blocked: x.sd!.def.trigger!.resolvable?.(ctx.s, x.sd!.src, x.it.ev) ?? null }));
     if (!live.length) return;
-    const mandatory = live.filter((x) => isMandatory(x.sd!.def) || x.sd!.def.trigger!.mandatory);
-    const options: Option[] = live.map((x, i) => ({
-      id: String(i),
-      label: `${x.sd!.src.name}：${x.sd!.def.label}`,
-      rule: x.sd!.def.rule ?? 'EE-12',
-    }));
+    const open = live.filter((x) => !x.blocked);
+    const blocked = live.filter((x) => x.blocked);
+    // EE-12b 同一個效果的多份 (例：同回合用了兩次的技能)：先後沒有差別，只列一個選項
+    const uniq = open.filter((x, i) => open.findIndex((y) => y.sd!.def.key === x.sd!.def.key && y.label === x.label) === i);
+    const mandatory = uniq.filter((x) => isMandatory(x.sd!.def) || x.sd!.def.trigger!.mandatory);
+    if (!uniq.length) {
+      // EE-12a 只剩無法結算的效果：顯示 (不能選) 讓玩家知道，按確定略過
+      if (!shownBlocked) {
+        yield* ctx.choose(
+          'EE-12a',
+          '這些效果現在無法結算',
+          [
+            ...blocked.map((x, i) => ({ id: `blocked:${i}`, label: x.label, legal: false, reason: x.blocked!, rule: x.sd!.def.rule ?? 'EE-12a' })),
+            { id: 'ok', label: '確定', rule: 'EE-12a' },
+          ],
+          false,
+        );
+      }
+      for (const x of blocked) ctx.log('EE-12a', `${x.label}：無法結算 (${x.blocked})`);
+      return;
+    }
+    const options: Option[] = [
+      ...uniq.map((x, i) => ({ id: String(i), label: x.label, rule: x.sd!.def.rule ?? 'EE-12' })),
+      ...blocked.map((x, i) => ({ id: `blocked:${i}`, label: x.label, legal: false, reason: x.blocked!, rule: x.sd!.def.rule ?? 'EE-12a' })),
+    ];
     if (!mandatory.length) options.push({ id: 'skip', label: '不使用', rule: 'EE-12' });
     let pick: string;
-    if (live.length === 1 && mandatory.length === 1) pick = '0';
-    else pick = yield* ctx.choose('EE-12', '選擇要結算的效果', options, false);
+    if (uniq.length === 1 && mandatory.length === 1 && !blocked.length) pick = '0';
+    else {
+      pick = yield* ctx.choose('EE-12', '選擇要結算的效果', options, false);
+      if (blocked.length) shownBlocked = true;
+    }
     if (pick === 'skip') return;
-    const chosen = live[Number(pick)];
+    const chosen = uniq[Number(pick)];
     pending = pending.filter((p) => p !== chosen.it);
     const { src, def } = chosen.sd!;
     ctx.log(def.rule ?? 'EE-09', `${src.name}：${def.label}`);

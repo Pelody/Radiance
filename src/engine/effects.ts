@@ -111,6 +111,11 @@ export interface EffectDef {
     timing: 'when' | 'after' | 'will';
     mandatory: boolean;
     filter?: (s: GameState, src: Source, ev: GameEvent) => boolean;
+    /**
+     * EE-12a 結算時還能不能產生效果 (例：任務區已經沒有可以 Pull 的敵人)。回傳原因 = 不能結算：
+     * 選項照樣列出但不能選，按「確定」略過。
+     */
+    resolvable?: (s: GameState, src: Source, ev: GameEvent) => string | null;
     run: TriggerRun;
   };
   /** KC-12a Start of / End of */

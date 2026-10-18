@@ -165,7 +165,10 @@ button.primary { background: var(--gold); color: #111318; border: 0; font-weight
 .cube.Wind { background: #8ec5e8; }
 .cube.x::after { content: '×'; position: absolute; right: -9px; top: -6px; color: var(--down); font-size: 14px; }
 .usable-tag { position: absolute; right: 3px; bottom: 3px; padding: 0 4px; border-radius: 6px; background: var(--gold); color: #111318; font-size: 10px; font-weight: 700; line-height: 13px; }
-.perm { display: flex; flex-wrap: wrap; gap: 4px; }
+.perm { height: 141px; }
+.perm-card { position: absolute; top: 0; }
+.perm-card:hover { z-index: 5; }
+.perm-label { position: absolute; left: 0; top: 143px; width: 212px; text-align: left; font-size: 12px; color: #c9a55a; white-space: nowrap; }
 .market { display: flex; gap: 10px; }
 .market-label { position: absolute; left: 0; top: 143px; width: 212px; text-align: center; font-size: 12px; color: #c9a55a; }
 
@@ -295,3 +298,16 @@ button.ghost { background: transparent; border-color: var(--line2); color: var(-
 .card.effect { outline: 2px solid #7fd1a0; outline-offset: 2px; animation: glow 1.6s ease-in-out infinite; }
 @keyframes glow { 0%, 100% { box-shadow: 0 0 6px rgba(127, 209, 160, 0.45); } 50% { box-shadow: 0 0 16px rgba(127, 209, 160, 0.95); } }
 .skill.clickable { animation: glow 1.6s ease-in-out infinite; }
+
+/* UI-06c 成長墊 */
+.growth-mat { flex-shrink: 0; padding-bottom: 8px; }
+.growth-mat .panel-head { margin-bottom: 4px; }
+.grow-click { cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.grow-row { display: flex; align-items: center; gap: 4px; }
+.grow-cells { flex: 1; display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 2px; }
+.grow-cell { height: 44px; border-radius: 4px; background: var(--panel2); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 1px; overflow: hidden; }
+.grow-cell.done { opacity: 0.45; }
+.grow-cell.cur { border-color: var(--gold); background: #4a3d1f; }
+.grow-cell.next { border-color: #7fd1a0; }
+.grow-cost { font-size: 10px; color: var(--muted); line-height: 11px; height: 11px; }
+.grow-ben { display: flex; align-items: center; font-size: 9px; font-weight: 700; line-height: 10px; }

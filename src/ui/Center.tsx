@@ -1,6 +1,6 @@
 // UI-05a 中間：任務區 + Treachery、玩家區、玩家板 (行動卡、墊子、加成卡、夥伴、攻擊卡、探索卡、嗜好市場)、手牌。
 import { enemyHP, questDarkness, enemyAttack, enemyTypes, engagementCount, locationEV, treacheryPV } from '../engine/calc';
-import { cardName, skillMat } from '../engine/data';
+import { cardName, playerCard, skillMat } from '../engine/data';
 import { skillUsable } from '../engine/effects';
 import type { SkillState } from '../engine/types';
 import { useUI, windowOption } from './ctx';
@@ -236,9 +236,13 @@ function Mat({ name }: { name: string }) {
   );
 }
 
+/** 永久加成卡疊放時每張露出的寬度 */
+const PERM_STEP = 38;
+
 export function PlayerBoard() {
-  const { s, sel, setSel, d } = useUI();
+  const { s, sel, setSel, d, preview } = useUI();
   const p = s.player;
+  const activeEl = (preview?.complete ? preview.element : null) ?? s.roundState.activeElement ?? null;
   const choosing = d?.type === 'actionSet';
   const slotCard = (slot: 'action' | 'attack' | 'booster') => (choosing ? sel[slot] : (p.actionSet[slot] ?? undefined));
   const slot = (k: 'action' | 'attack' | 'booster', label: string, left: number, top = 0) => {
@@ -267,10 +271,18 @@ export function PlayerBoard() {
         </div>
       </div>
       <div className="board-row" style={{ height: 157, marginTop: 8 }}>
-        <div className="abs perm" style={{ left: 0, width: 260 }} title="永久加成卡 (KC-09)">
-          {p.permBoosters.map((id) => (
-            <Card key={id} id={id} w={56} />
-          ))}
+        {/* UI-05a 永久加成卡：照實體疊放，露出左邊的元素與加成數值 (規則書 p.25)；本回合啟動的加金框 (KC-09) */}
+        <div className="abs perm" style={{ left: 0, width: 260 }} title="Permanent Boosters (KC-09)">
+          {p.permBoosters.length === 0 ? (
+            <Slot label="Perm Booster" />
+          ) : (
+            p.permBoosters.map((id, i) => (
+              <div key={id} className="perm-card" style={{ left: i * PERM_STEP }}>
+                <Card id={id} highlight={!!activeEl && playerCard(id).element === activeEl} title={`${cardName(id)}${playerCard(id).element === activeEl ? '：本回合啟動' : ''}`} />
+              </div>
+            ))
+          )}
+          <span className="perm-label">Permanent Boosters</span>
         </div>
         {slot('attack', 'Attack', 279)}
         <div className="abs" style={{ left: 409 }}>

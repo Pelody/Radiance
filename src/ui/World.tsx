@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { beaconLimit, isFinalCandidate, locationEV } from '../engine/calc';
 import { CARDS, locationCard, type LocationData } from '../engine/data';
-import { shadeInfluenceSpaces } from '../engine/tracks';
+import { abilitySpace, abilityTrackLength, characterSpace, characterTrackLength, shadeInfluenceSpaces } from '../engine/tracks';
+import { abilityGrowthStatus, characterGrowthStatus } from '../engine/window';
 import { fetchStatus } from '../engine/world';
 import { freeLightAvailable } from '../engine/ops';
 import { useUI } from './ctx';
@@ -118,12 +119,13 @@ export function MapPanel() {
         </div>
         <div className="influence">
           {spaces.map((sp, i) => (
-            <div key={i} className={`irow${i === w.shadeInfluence ? ' cur' : ''}`} title={i === 0 ? 'Start' : `已探索 ${i} 個地點`}>
+            <div key={i} className={`irow${i === w.shadeInfluence ? ' cur' : ''}`} title={i === 0 ? 'Start (開局放在這格，SU-09)' : `第 ${i} 次移動後`}>
               {i === 0 ? (
                 <span>Start</span>
               ) : (
                 <>
-                  <span className="muted">{i}</span>
+                  {/* 照實體墊子印的數字：10 → 0 遞減 (UI-06b，1.7.1) */}
+                  <span className="muted">{sp.label}</span>
                   {sp.threat !== undefined && (
                     <span className="iv">
                       <Icon name="ThreatTrack" title="Threat" />+{sp.threat}
@@ -139,6 +141,55 @@ export function MapPanel() {
             </div>
           ))}
         </div>
+      </div>
+    </Panel>
+  );
+}
+
+// ---------------------------------------------------------------- 成長墊 (UI-06c)
+
+const GROWTH_ICON: Record<string, string> = {
+  unlock: 'Unlocked',
+  recruit: 'Recruit',
+  upgrade: 'Upgrade',
+  light: 'Light',
+  hand_size: 'HandSize',
+  rest: 'Rest',
+  perm_booster: 'PermBooster',
+};
+
+/** UI-06c 成長墊：照實體墊子畫 Ability / Character 兩條成長軌道；目前位置亮起來，點一下打開成長畫面 */
+export function GrowthPanel({ onOpen }: { onOpen: () => void }) {
+  const { s, opt } = useUI();
+  const p = s.player;
+  const row = (name: string, icon: string, len: number, pos: number, get: (i: number) => Record<string, number | undefined>, next: { cost: number; ok: boolean }, can: boolean) => (
+    <div className="grow-row" title={`${name}：下一格 ${next.cost} XP${can ? ' (現在可以成長)' : ''}`}>
+      <Icon name={icon} size={16} title={name} />
+      <div className="grow-cells">
+        {Array.from({ length: len + 1 }, (_, i) => {
+          const sp = get(i);
+          return (
+            <div key={i} className={`grow-cell${i === pos ? ' cur' : i < pos ? ' done' : ''}${i === pos + 1 && can ? ' next' : ''}`}>
+              <span className="grow-cost">{i === 0 ? '' : i === pos + 1 ? next.cost : sp.cost}</span>
+              {Object.entries(sp)
+                .filter(([k, v]) => k !== 'cost' && v !== undefined)
+                .map(([k, v]) => (
+                  <span key={k} className="grow-ben">
+                    <Icon name={GROWTH_ICON[k] ?? k} size={10} />
+                    {v}
+                  </span>
+                ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+  return (
+    <Panel title="Growth" className="growth-mat" right={<Stat icon="XP" value={p.xp} title="XP" />}>
+      <div className="grow-click" onClick={onOpen} title="點擊打開成長畫面 (DG-14)">
+        {row('Ability Growth', 'AbilityGrowth', abilityTrackLength(s), p.abilityGrowthPos, (i) => abilitySpace(s, i) as Record<string, number | undefined>, abilityGrowthStatus(s), !!opt('growAbility'))}
+        {row('Character Growth', 'CharacterGrowth', characterTrackLength(s), p.characterGrowthPos, (i) => characterSpace(s, i) as Record<string, number | undefined>, characterGrowthStatus(s), !!opt('growCharacter'))}
       </div>
     </Panel>
   );
